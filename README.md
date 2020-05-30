@@ -1,4 +1,4 @@
-# Tencent-Ads-Algo-Comp-
+# Tencent-Ads-Algo-Comp-2020
 
 Git repo for Tencent Advertisement Algorithm Competition 
 
