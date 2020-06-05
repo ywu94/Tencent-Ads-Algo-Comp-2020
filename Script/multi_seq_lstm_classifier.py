@@ -86,13 +86,13 @@ class Multi_Seq_LSTM_Classifier(nn.Module):
 		self.mlp_inp_size = sum(map(lambda x:2*x, lstm_hidden_size))
 		
 		for index, (e_size, h_size) in enumerate(zip(embed_size, lstm_hidden_size)):
-			setattr(self, f'extraction_layer_{index}', LSTM_Extraction_Layer(e_size, h_size, rnn_dropout=rnn_dropout, mlp_dropout=mlp_dropout))
+			setattr(self, 'extraction_layer_{}'.format(index), LSTM_Extraction_Layer(e_size, h_size, rnn_dropout=rnn_dropout, mlp_dropout=mlp_dropout))
 		self.classification_layer = MLP_Classification_Layer(self.mlp_inp_size, out_size, dropout=mlp_dropout)
 		
 	def forward(self, *args):
 		assert len(args)==self.n_extraction+1
 		
-		extract_buffer = [getattr(self, f'extraction_layer_{index}')(inp_embed, args[-1]) for index, inp_embed in enumerate(args[:-1])]
+		extract_buffer = [getattr(self, 'extraction_layer_{}.format(index)')(inp_embed, args[-1]) for index, inp_embed in enumerate(args[:-1])]
 		out = torch.cat(extract_buffer, 1)
 		out = self.classification_layer(out)
 		

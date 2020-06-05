@@ -8,7 +8,7 @@ Git repo for Tencent Advertisement Algorithm Competition
 ```
 |--Script
   |--data_loader.py
-  |--mdoel.py
+  |--multi_seq_lstm_classifier.py
   |--sample_training_script_multi_seq_lstm_classifier.py
 ```
 

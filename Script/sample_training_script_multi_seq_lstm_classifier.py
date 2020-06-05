@@ -17,7 +17,7 @@ from torch import nn
 import torch.nn.functional as F
 
 from data_loader import train_data_loader, test_data_loader
-from model import LSTM_Extraction_Layer, MLP_Classification_Layer, Multi_Seq_LSTM_Classifier
+from multi_seq_lstm_classifier import LSTM_Extraction_Layer, MLP_Classification_Layer, Multi_Seq_LSTM_Classifier
 
 cwd = os.getcwd()
 train_path = os.path.join(cwd, 'train_artifact')
@@ -198,13 +198,10 @@ if __name__=='__main__':
 		logger.info('CUDA Memory: Total {:.2f} GB, Cached {:.2f} GB, Allocated {:.2f} GB'.format(t,c,a))
 
 	model = Multi_Seq_LSTM_Classifier([128, 128, 256, 256], [512, 512, 512, 512], 10)
-	train_inp_tuple = [
-		('/Users/ywu/Desktop/train_toy.npy', ['product', 'advertiser', 'creative', 'ad'], ['/Users/ywu/Desktop/product_toy.pkl', '/Users/ywu/Desktop/advertiser_toy.pkl', '/Users/ywu/Desktop/creative_toy.pkl','/Users/ywu/Desktop/ad_toy.pkl']),
-		('/Users/ywu/Desktop/train_toy.npy', ['product', 'advertiser', 'creative', 'ad'], ['/Users/ywu/Desktop/product_toy.pkl', '/Users/ywu/Desktop/advertiser_toy.pkl', '/Users/ywu/Desktop/creative_toy.pkl','/Users/ywu/Desktop/ad_toy.pkl'])
-	]
-	validation_inp_tuple = [
-		('/Users/ywu/Desktop/train_toy.npy', ['product', 'advertiser', 'creative', 'ad'], ['/Users/ywu/Desktop/product_toy.pkl', '/Users/ywu/Desktop/advertiser_toy.pkl', '/Users/ywu/Desktop/creative_toy.pkl','/Users/ywu/Desktop/ad_toy.pkl'])
-	]
+	train_inp_tuple = [(os.path.join(input_path, 'train_age.npy'), ['product', 'advertiser', 'creative', 'ad'], 
+		[os.path.join(input_path, 'train_product_id_seq.pkl'), os.path.join(input_path, 'train_advertiser_id_seq.pkl'),
+		 os.path.join(input_path, 'train_creative_id_seq.pkl'),os.path.join(input_path, 'train_ad_id_seq.pkl')])]
+	validation_inp_tuple = train_inp_tuple[:]
 	checkpoint_dir = os.path.join(model_path, 'Multi_Seq_LSTM_Classifier_Four_Seq_Age')
 	checkpoint_prefix = 'Multi_Seq_LSTM_Classifier_Four_Seq_Age'
 
