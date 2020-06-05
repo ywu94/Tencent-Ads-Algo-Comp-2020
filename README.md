@@ -6,7 +6,13 @@ Git repo for Tencent Advertisement Algorithm Competition
 
 ### Data Preparation
 
-* Step 1: change directory to `/Script` and run `. prerequisite.sh` (if the instance has no public internet connection, download [train file](https://tesla-ap-shanghai-1256322946.cos.ap-shanghai.myqcloud.com/cephfs/tesla_common/deeplearning/dataset/algo_contest/train_preliminary.zip) and [test file](https://tesla-ap-shanghai-1256322946.cos.ap-shanghai.myqcloud.com/cephfs/tesla_common/deeplearning/dataset/algo_contest/test.zip) and put them under `/Script`), you should have the following files and directories after execution.
+* **Step 1**: run 
+```bat
+cd ./Script
+. prerequisite.sh
+``` 
+
+Note that if the instance has no public internet connection, download [train file](https://tesla-ap-shanghai-1256322946.cos.ap-shanghai.myqcloud.com/cephfs/tesla_common/deeplearning/dataset/algo_contest/train_preliminary.zip) and [test file](https://tesla-ap-shanghai-1256322946.cos.ap-shanghai.myqcloud.com/cephfs/tesla_common/deeplearning/dataset/algo_contest/test.zip) and put them under `/Script`. You should have the following files and directories after execution.
 
 ```
 |--Script
@@ -23,7 +29,12 @@ Git repo for Tencent Advertisement Algorithm Competition
   |--output_artifact
 ```
 
-* Step 2: run `python3 input_generate.py`, you should have the following files after execution.
+* Step 2: run 
+```bat
+python3 input_generate.py
+```
+
+You should have the following files after execution.
 
 ```
 |--Script
@@ -52,7 +63,7 @@ Git repo for Tencent Advertisement Algorithm Competition
 ```
 
 * Step 3: run 
-```
+```bat
 python3 train_w2v.py creative 256
 python3 train_w2v.py ad 256
 python3 train_w2v.py advertiser 128
