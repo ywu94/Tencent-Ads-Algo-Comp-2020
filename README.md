@@ -29,7 +29,7 @@ Note that if the instance has no public internet connection, download [train fil
   |--output_artifact
 ```
 
-* Step 2: run 
+* **Step 2**: run 
 ```bat
 python3 input_generate.py
 ```
@@ -62,7 +62,7 @@ You should have the following files after execution.
   |--test_artifact
 ```
 
-* Step 3: run 
+* **Step 3**: run 
 ```bat
 python3 train_w2v.py creative 256
 python3 train_w2v.py ad 256
