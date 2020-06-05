@@ -70,7 +70,8 @@ python3 train_w2v.py advertiser 128
 python3 train_w2v.py product 128
 ```
 
-you should have the following files after exection
+You should have the following files after exection.
+
 ```
 |--Script
   |--embed_artifact
@@ -97,7 +98,7 @@ Note that `w2v_registry.json` stores all the w2v model artifact paths.
 
 * 官方竞赛手册: [PDF](https://algo-1256087447.cos.ap-nanjing.myqcloud.com/admin/20200509/7da104bd074309285ab56a6e52150ba3.pdf)
 
-* 赛题理解与思路: [19冠军分析](https://zhuanlan.zhihu.com/p/141288029), [19冠军思路](https://zhuanlan.zhihu.com/p/143185271), [Baseline 1](https://zhuanlan.zhihu.com/p/141842643), [Baseline 2](https://zhuanlan.zhihu.com/p/139270681)
+* 赛题理解与思路: [思路byCHIZHU](https://mp.weixin.qq.com/s/ISQjOGcc_spSNVeeg75d8w), [分析by鱼遇](https://zhuanlan.zhihu.com/p/141288029), [思路byby鱼遇](https://zhuanlan.zhihu.com/p/143185271), [Baseline 1](https://zhuanlan.zhihu.com/p/141842643), [Baseline 2](https://zhuanlan.zhihu.com/p/139270681), [Baseline 3](https://zhuanlan.zhihu.com/p/144346714)
 
 * 往届回顾: [17~19](https://zhuanlan.zhihu.com/p/116907937)
 
