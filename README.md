@@ -4,6 +4,15 @@ Git repo for Tencent Advertisement Algorithm Competition
 
 ## Script
 
+### Model Training Utility
+```
+|--Script
+  |--data_loader.py
+  |--mdoel.py
+  |--sample_training_script_multi_seq_lstm_classifier.py
+```
+
+
 ### Data Preparation
 
 * **Step 1**: run 
