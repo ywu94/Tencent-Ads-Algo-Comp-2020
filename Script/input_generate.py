@@ -24,7 +24,7 @@ def initiate_logger(log_path):
 	sh.setFormatter(formatter)
 	logger.addHandler(sh)
 	logger.info('===================================')
-	logger.info(f'Begin executing at {time.ctime()}')
+	logger.info('Begin executing at {}'.format(time.ctime()))
 	logger.info('===================================')
 	return logger
 

@@ -19,8 +19,8 @@ class train_data_loader(object):
 	def __init__(self, label_artifact_path, seq_inp_target, seq_inp_path, w2v_registry, max_seq_len=100, batch_size=512, shuffle=False, logger=None):
 		"""
 		: label_artifact_path (str): path to a npy file containing a 1d array
-		: seq_inp_target (list(str)): list of embedding variables
-		: seq_inp_path (list(str)): list of paths to a pkl file 
+		: seq_inp_target (list[str]): list of embedding variables
+		: seq_inp_path (list[str]): list of paths to a pkl file 
 		: w2v_registry (dict): key is the embedded variable and value is the path to a gensim.models.Word2Vec artifact
 		: max_seq_len (int): max length for sequence input, default 100 
 		: batch_size (int): batch size for yielding data
@@ -67,7 +67,7 @@ class train_data_loader(object):
 
 		self.inp_seq = []
 		self._load_seq_inp()
-		self.inp_last_idx = np.array([i.shape[0] for i in self.inp_seq[0]])
+		self.inp_last_idx = np.array([i.shape[0] for i in self.inp_seq[0]]) - 1
 
 		assert self.label.shape[0]==self.inp_last_idx.shape[0]
 
@@ -111,7 +111,7 @@ class train_data_loader(object):
 			x_seq = [torch.nn.utils.rnn.pad_sequence([seq[i] for i in cur_index], batch_first=True, padding_value=0) for seq in self.inp_seq]
 			x_seq_last_idx = self.inp_last_idx[cur_index]
 			self.cur_batch += 1
-			return y, x_seq, x_seq_last_idx
+			return y, x_seq, x_seq_last_idx-1
 
 class test_data_loader(object):
 	"""
@@ -119,8 +119,8 @@ class test_data_loader(object):
 	"""
 	def __init__(self, seq_inp_target, seq_inp_path, w2v_registry, max_seq_len=100, batch_size=512, logger=None):
 		"""
-		: seq_inp_target (list(str)): list of embedding variables
-		: seq_inp_path (list(str)): list of paths to a pkl file 
+		: seq_inp_target (list[str])): list of embedding variables
+		: seq_inp_path (list[str])): list of paths to a pkl file 
 		: w2v_registry (dict): key is the embedded variable and value is the path to a gensim.models.Word2Vec artifact
 		: max_seq_len (int): max length for sequence input, default 100 
 		: batch_size (int): batch size for yielding data
@@ -159,7 +159,7 @@ class test_data_loader(object):
 
 		self.inp_seq = []
 		self._load_seq_inp()
-		self.inp_last_idx = np.array([i.shape[0] for i in self.inp_seq[0]])
+		self.inp_last_idx = np.array([i.shape[0] for i in self.inp_seq[0]]) - 1
 
 		self.len = self.inp_last_idx.shape[0]
 		div, mod = divmod(self.len, self.batch_size)
