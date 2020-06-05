@@ -12,10 +12,6 @@ import tempfile
 from gensim.models import Word2Vec
 import torch
 
-cwd = os.getcwd()
-input_path = os.path.join(cwd, 'input_path')
-embed_path = os.path.join(cwd, 'embed_artifact')
-
 class train_data_loader(object):
 	"""
 	Load training label and input
@@ -29,6 +25,28 @@ class train_data_loader(object):
 		: max_seq_len (int): max length for sequence input, default 100 
 		: batch_size (int): batch size for yielding data
 		: shuffle (bool): whether to shuffle data before yielding
+
+		Sample code
+		```python
+		label_artifact_path = '/Users/ywu/Desktop/train_toy.npy'
+		seq_inp_target = ['product', 'creative']
+		seq_inp_path = ['/Users/ywu/Desktop/product_toy.pkl', '/Users/ywu/Desktop/creative_toy.pkl']
+		w2v_registry = {
+			"product": "/Users/ywu/Desktop/Tencent-Ads-Algo-Comp-2020/Script/embed_artifact/product_embed_s128_j1j5w652", 
+			"creative": "/Users/ywu/Desktop/Tencent-Ads-Algo-Comp-2020/Script/embed_artifact/creative_embed_s256_5y76t_gp"
+		}
+
+		train_loader = train_data_loader(label_artifact_path, seq_inp_target, seq_inp_path, w2v_registry)
+		train_iterator = iter(train_loader)
+		while True:
+			try:
+				y, x_seq, x_last_idx = next(train_iterator)
+				...
+			except:
+				break
+		del train_iterator, train_loader
+		_ = gc.collect()
+		```
 		"""
 		assert label_artifact_path.split('.')[-1]=='npy'
 		assert isinstance(seq_inp_target, list), isinstance(seq_inp_path, list) and isinstance(w2v_registry, dict)
@@ -106,6 +124,27 @@ class test_data_loader(object):
 		: w2v_registry (dict): key is the embedded variable and value is the path to a gensim.models.Word2Vec artifact
 		: max_seq_len (int): max length for sequence input, default 100 
 		: batch_size (int): batch size for yielding data
+
+		Sample code
+		```python
+		seq_inp_target = ['product', 'creative']
+		seq_inp_path = ['/Users/ywu/Desktop/product_toy.pkl', '/Users/ywu/Desktop/creative_toy.pkl']
+		w2v_registry = {
+			"product": "/Users/ywu/Desktop/Tencent-Ads-Algo-Comp-2020/Script/embed_artifact/product_embed_s128_j1j5w652", 
+			"creative": "/Users/ywu/Desktop/Tencent-Ads-Algo-Comp-2020/Script/embed_artifact/creative_embed_s256_5y76t_gp"
+		}
+
+		test_loader = test_data_loader(seq_inp_target, seq_inp_path, w2v_registry)
+		test_iterator = iter(train_loader)
+		while True:
+			try:
+				x_seq, x_last_idx = next(test_iterator)
+				...
+			except:
+				break
+		del test_iterator, test_loader
+		_ = gc.collect()
+		```
 		"""
 		assert isinstance(seq_inp_target, list), isinstance(seq_inp_path, list) and isinstance(w2v_registry, dict)
 		assert all([k in w2v_registry for k in seq_inp_target]) and all([v.split('.')[-1]=='pkl' for v in seq_inp_path])
