@@ -98,7 +98,7 @@ def train(model, train_inp_tuple, validation_inp_tuple, checkpoint_dir, checkpoi
 		train_running_loss, train_n_batch = 0, 0
 
 		for index, (label_artifact_path, seq_inp_target, seq_inp_path) in enumerate(train_inp_tuple, start=1):
-			train_loader = train_data_loader(label_artifact_path, seq_inp_target, seq_inp_path, w2v_registry)
+			train_loader = train_data_loader(label_artifact_path, seq_inp_target, seq_inp_path, w2v_registry, max_seq_len=max_seq_len)
 			train_iterator = iter(train_loader)
 			while True:
 				try:
@@ -138,7 +138,7 @@ def train(model, train_inp_tuple, validation_inp_tuple, checkpoint_dir, checkpoi
 		true_y, pred_y = [], []
 
 		for index, (label_artifact_path, seq_inp_target, seq_inp_path) in enumerate(validation_inp_tuple, start=1):
-			train_loader = train_data_loader(label_artifact_path, seq_inp_target, seq_inp_path, w2v_registry)
+			train_loader = train_data_loader(label_artifact_path, seq_inp_target, seq_inp_path, w2v_registry, max_seq_len=max_seq_len)
 			train_iterator = iter(train_loader)
 			while True:
 				try:
@@ -185,7 +185,29 @@ def train(model, train_inp_tuple, validation_inp_tuple, checkpoint_dir, checkpoi
 		torch.save(model.state_dict(), ck_file_path)
 
 if __name__=='__main__':
-	epoch_start = int(sys.argv[1]) if len(sys.argv)>=2 else 0
+	assert len(sys.argv)>=5
+	epoch_start = int(sys.argv[1])
+	epoches = int(sys.argv[2])
+	batch_size = int(sys.argv[3])
+	max_seq_len = int(sys.argv[4])
+	if len(sys.argv)>5:
+		train_inp_tuple = [(os.path.join(input_path, 'train_age_{}.npy'.format(i)), ['product', 'advertiser', 'creative', 'ad'], 
+			[os.path.join(input_path, 'train_product_id_seq_{}.pkl'.format(i)), os.path.join(input_path, 'train_advertiser_id_seq_{}.pkl'.format(i)),
+			 os.path.join(input_path, 'train_creative_id_seq_{}.pkl'.format(i)),os.path.join(input_path, 'train_ad_id_seq_{}.pkl'.format(i))]) for i in range(1,10)]
+		validation_inp_tuple = [(os.path.join(input_path, 'train_age_{}.npy'.format(i)), ['product', 'advertiser', 'creative', 'ad'], 
+			[os.path.join(input_path, 'train_product_id_seq_{}.pkl'.format(i)), os.path.join(input_path, 'train_advertiser_id_seq_{}.pkl'.format(i)),
+			 os.path.join(input_path, 'train_creative_id_seq_{}.pkl'.format(i)),os.path.join(input_path, 'train_ad_id_seq_{}.pkl'.format(i))]) for i in range(10,11)]
+		checkpoint_dir = os.path.join(model_path, 'Multi_Seq_LSTM_Classifier_Four_Seq_Age')
+		checkpoint_prefix = 'Multi_Seq_LSTM_Classifier_Four_Seq_Age'
+	else:
+		train_inp_tuple = [(os.path.join(input_path, 'train_age_tra.npy'), ['product', 'advertiser', 'creative', 'ad'], 
+			[os.path.join(input_path, 'train_product_id_seq_tra.pkl'), os.path.join(input_path, 'train_advertiser_id_seq_tra.pkl'),
+			 os.path.join(input_path, 'train_creative_id_seq_tra.pkl'),os.path.join(input_path, 'train_ad_id_seq_tra.pkl')])]
+		validation_inp_tuple = [(os.path.join(input_path, 'train_age_val.npy'), ['product', 'advertiser', 'creative', 'ad'], 
+			[os.path.join(input_path, 'train_product_id_seq_val.pkl'), os.path.join(input_path, 'train_advertiser_id_seq_val.pkl'),
+			 os.path.join(input_path, 'train_creative_id_seq_val.pkl'),os.path.join(input_path, 'train_ad_id_seq_val.pkl')])]
+		checkpoint_dir = os.path.join(model_path, 'Multi_Seq_LSTM_Classifier_Four_Seq_Age')
+		checkpoint_prefix = 'Multi_Seq_LSTM_Classifier_Four_Seq_Age'
 
 	logger = initiate_logger('train_product_creative_age.log')
 
@@ -199,16 +221,9 @@ if __name__=='__main__':
 		logger.info('CUDA Memory: Total {:.2f} GB, Cached {:.2f} GB, Allocated {:.2f} GB'.format(t,c,a))
 
 	model = Multi_Seq_LSTM_Classifier([128, 128, 256, 256], [512, 512, 512, 512], 10)
-	train_inp_tuple = [(os.path.join(input_path, 'train_age_tra.npy'), ['product', 'advertiser', 'creative', 'ad'], 
-		[os.path.join(input_path, 'train_product_id_seq_tra.pkl'), os.path.join(input_path, 'train_advertiser_id_seq_tra.pkl'),
-		 os.path.join(input_path, 'train_creative_id_seq_tra.pkl'),os.path.join(input_path, 'train_ad_id_seq_tra.pkl')])]
-	validation_inp_tuple = [(os.path.join(input_path, 'train_age_val.npy'), ['product', 'advertiser', 'creative', 'ad'], 
-		[os.path.join(input_path, 'train_product_id_seq_val.pkl'), os.path.join(input_path, 'train_advertiser_id_seq_val.pkl'),
-		 os.path.join(input_path, 'train_creative_id_seq_val.pkl'),os.path.join(input_path, 'train_ad_id_seq_val.pkl')])]
-	checkpoint_dir = os.path.join(model_path, 'Multi_Seq_LSTM_Classifier_Four_Seq_Age')
-	checkpoint_prefix = 'Multi_Seq_LSTM_Classifier_Four_Seq_Age'
-
-	train(model, train_inp_tuple, validation_inp_tuple, checkpoint_dir, checkpoint_prefix, DEVICE, epoches=5, batch_size=1024, logger=logger, epoch_start=epoch_start)
+	
+	train(model, train_inp_tuple, validation_inp_tuple, checkpoint_dir, checkpoint_prefix, DEVICE, 
+		epoches=epoches, batch_size=batch_size, logger=logger, epoch_start=epoch_start, max_seq_len=max_seq_len)
 
 
 

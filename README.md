@@ -5,11 +5,24 @@ Git repo for Tencent Advertisement Algorithm Competition
 ## Script
 
 ### Model Training Utility
+
+* Multi-Seq-LSTM Classifier for Age Prediction
+
+Run `python3 train_age_multi_seq_lstm_classifier.py 0 10 1024 100 split`
+> **Argument**:
+> * 1. (Required,INT) 0 means training from scratch and a positive number means loading the corresponding epoch and start training from there.
+> * 2. (Required,INT) number of epoches to train
+> * 3. (Required,INT) batch size for training
+> * 4. (Required,INT) maximal length of input sequence, smaller length can help train withb larger batch size
+> * 5. (Optional) If nothing specified then the model will be trained using unsplitted files. If `python3 input_split.py fine` has been running and a value is specified the model will be trained using a list of splitted files. 
+
+File inventory:
+
 ```
 |--Script
   |--data_loader.py
   |--multi_seq_lstm_classifier.py
-  |--sample_training_script_multi_seq_lstm_classifier.py
+  |--train_age_multi_seq_lstm_classifier.py
 ```
 
 
