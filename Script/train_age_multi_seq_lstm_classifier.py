@@ -23,6 +23,7 @@ cwd = os.getcwd()
 train_path = os.path.join(cwd, 'train_artifact')
 test_path = os.path.join(cwd, 'test_artifact')
 input_path = os.path.join(cwd, 'input_artifact')
+input_split_path = os.path.join(cwd, 'input_split_artifact')
 embed_path = os.path.join(cwd, 'embed_artifact')
 model_path = os.path.join(cwd, 'model_artifact')
 
@@ -191,12 +192,12 @@ if __name__=='__main__':
 	batch_size = int(sys.argv[3])
 	max_seq_len = int(sys.argv[4])
 	if len(sys.argv)>5:
-		train_inp_tuple = [(os.path.join(input_path, 'train_age_{}.npy'.format(i)), ['product', 'advertiser', 'creative', 'ad'], 
-			[os.path.join(input_path, 'train_product_id_seq_{}.pkl'.format(i)), os.path.join(input_path, 'train_advertiser_id_seq_{}.pkl'.format(i)),
-			 os.path.join(input_path, 'train_creative_id_seq_{}.pkl'.format(i)),os.path.join(input_path, 'train_ad_id_seq_{}.pkl'.format(i))]) for i in range(1,10)]
-		validation_inp_tuple = [(os.path.join(input_path, 'train_age_{}.npy'.format(i)), ['product', 'advertiser', 'creative', 'ad'], 
-			[os.path.join(input_path, 'train_product_id_seq_{}.pkl'.format(i)), os.path.join(input_path, 'train_advertiser_id_seq_{}.pkl'.format(i)),
-			 os.path.join(input_path, 'train_creative_id_seq_{}.pkl'.format(i)),os.path.join(input_path, 'train_ad_id_seq_{}.pkl'.format(i))]) for i in range(10,11)]
+		train_inp_tuple = [(os.path.join(input_split_path, 'train_age_{}.npy'.format(i)), ['product', 'advertiser', 'creative', 'ad'], 
+			[os.path.join(input_split_path, 'train_product_id_seq_{}.pkl'.format(i)), os.path.join(input_split_path, 'train_advertiser_id_seq_{}.pkl'.format(i)),
+			 os.path.join(input_split_path, 'train_creative_id_seq_{}.pkl'.format(i)),os.path.join(input_split_path, 'train_ad_id_seq_{}.pkl'.format(i))]) for i in range(1,10)]
+		validation_inp_tuple = [(os.path.join(input_split_path, 'train_age_{}.npy'.format(i)), ['product', 'advertiser', 'creative', 'ad'], 
+			[os.path.join(input_split_path, 'train_product_id_seq_{}.pkl'.format(i)), os.path.join(input_split_path, 'train_advertiser_id_seq_{}.pkl'.format(i)),
+			 os.path.join(input_split_path, 'train_creative_id_seq_{}.pkl'.format(i)),os.path.join(input_split_path, 'train_ad_id_seq_{}.pkl'.format(i))]) for i in range(10,11)]
 		checkpoint_dir = os.path.join(model_path, 'Multi_Seq_LSTM_Classifier_Four_Seq_Age')
 		checkpoint_prefix = 'Multi_Seq_LSTM_Classifier_Four_Seq_Age'
 	else:
