@@ -92,7 +92,7 @@ class Multi_Seq_LSTM_Classifier(nn.Module):
 	def forward(self, *args):
 		assert len(args)==self.n_extraction+1
 		
-		extract_buffer = [getattr(self, 'extraction_layer_{}.format(index)')(inp_embed, args[-1]) for index, inp_embed in enumerate(args[:-1])]
+		extract_buffer = [getattr(self, 'extraction_layer_{}'.format(index))(inp_embed, args[-1]) for index, inp_embed in enumerate(args[:-1])]
 		out = torch.cat(extract_buffer, 1)
 		out = self.classification_layer(out)
 		

@@ -167,7 +167,7 @@ def train(model, train_inp_tuple, validation_inp_tuple, checkpoint_dir, checkpoi
 					del x, y, yp, x_seq, x_last_idx
 					_ = gc.collect()
 					torch.cuda.empty_cache()
-
+					
 				except StopIteration:
 					break
 
@@ -199,25 +199,25 @@ if __name__=='__main__':
 	batch_size = int(sys.argv[3])
 	max_seq_len = int(sys.argv[4])
 	if len(sys.argv)>5:
-		train_inp_tuple = [(os.path.join(input_split_path, 'train_age_{}.npy'.format(i)), ['product', 'advertiser', 'creative', 'ad'], 
+		train_inp_tuple = [(os.path.join(input_split_path, 'train_gender_{}.npy'.format(i)), ['product', 'advertiser', 'creative', 'ad'], 
 			[os.path.join(input_split_path, 'train_product_id_seq_{}.pkl'.format(i)), os.path.join(input_split_path, 'train_advertiser_id_seq_{}.pkl'.format(i)),
 			 os.path.join(input_split_path, 'train_creative_id_seq_{}.pkl'.format(i)),os.path.join(input_split_path, 'train_ad_id_seq_{}.pkl'.format(i))]) for i in range(1,10)]
-		validation_inp_tuple = [(os.path.join(input_split_path, 'train_age_{}.npy'.format(i)), ['product', 'advertiser', 'creative', 'ad'], 
+		validation_inp_tuple = [(os.path.join(input_split_path, 'train_gender_{}.npy'.format(i)), ['product', 'advertiser', 'creative', 'ad'], 
 			[os.path.join(input_split_path, 'train_product_id_seq_{}.pkl'.format(i)), os.path.join(input_split_path, 'train_advertiser_id_seq_{}.pkl'.format(i)),
 			 os.path.join(input_split_path, 'train_creative_id_seq_{}.pkl'.format(i)),os.path.join(input_split_path, 'train_ad_id_seq_{}.pkl'.format(i))]) for i in range(10,11)]
-		checkpoint_dir = os.path.join(model_path, 'Multi_Seq_LSTM_Classifier_Four_Seq_Age')
-		checkpoint_prefix = 'Multi_Seq_LSTM_Classifier_Four_Seq_Age'
+		checkpoint_dir = os.path.join(model_path, 'Multi_Seq_LSTM_Classifier_Four_Seq_Gender')
+		checkpoint_prefix = 'Multi_Seq_LSTM_Classifier_Four_Seq_Gender'
 	else:
-		train_inp_tuple = [(os.path.join(input_path, 'train_age_tra.npy'), ['product', 'advertiser', 'creative', 'ad'], 
+		train_inp_tuple = [(os.path.join(input_path, 'train_agender_tra.npy'), ['product', 'advertiser', 'creative', 'ad'], 
 			[os.path.join(input_path, 'train_product_id_seq_tra.pkl'), os.path.join(input_path, 'train_advertiser_id_seq_tra.pkl'),
 			 os.path.join(input_path, 'train_creative_id_seq_tra.pkl'),os.path.join(input_path, 'train_ad_id_seq_tra.pkl')])]
-		validation_inp_tuple = [(os.path.join(input_path, 'train_age_val.npy'), ['product', 'advertiser', 'creative', 'ad'], 
+		validation_inp_tuple = [(os.path.join(input_path, 'train_agender_val.npy'), ['product', 'advertiser', 'creative', 'ad'], 
 			[os.path.join(input_path, 'train_product_id_seq_val.pkl'), os.path.join(input_path, 'train_advertiser_id_seq_val.pkl'),
 			 os.path.join(input_path, 'train_creative_id_seq_val.pkl'),os.path.join(input_path, 'train_ad_id_seq_val.pkl')])]
-		checkpoint_dir = os.path.join(model_path, 'Multi_Seq_LSTM_Classifier_Four_Seq_Age')
-		checkpoint_prefix = 'Multi_Seq_LSTM_Classifier_Four_Seq_Age'
+		checkpoint_dir = os.path.join(model_path, 'Multi_Seq_LSTM_Classifier_Four_Seq_Gender')
+		checkpoint_prefix = 'Multi_Seq_LSTM_Classifier_Four_Seq_Gender'
 
-	logger = initiate_logger('Multi_Seq_LSTM_Classifier_Four_Seq_Age.log')
+	logger = initiate_logger('Multi_Seq_LSTM_Classifier_Four_Seq_Gender.log')
 	logger.info('Epoch Start: {}， Epoch to Train: {}, Batch Size: {}, Max Sequence Length: {}'.format(epoch_start, epoches, batch_size, max_seq_len))
 
 	DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -229,7 +229,7 @@ if __name__=='__main__':
 		a = torch.cuda.memory_allocated(DEVICE)/1024**3
 		logger.info('CUDA Memory: Total {:.2f} GB, Cached {:.2f} GB, Allocated {:.2f} GB'.format(t,c,a))
 
-	model = Multi_Seq_LSTM_Classifier([128, 128, 256, 256], [256, 256, 256, 256], 10)
+	model = Multi_Seq_LSTM_Classifier([128, 128, 256, 256], [256, 256, 256, 256], 2)
 	
 	train(model, train_inp_tuple, validation_inp_tuple, checkpoint_dir, checkpoint_prefix, DEVICE, 
 		epoches=epoches, batch_size=batch_size, logger=logger, epoch_start=epoch_start, max_seq_len=max_seq_len)
