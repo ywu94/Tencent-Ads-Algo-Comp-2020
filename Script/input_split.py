@@ -58,12 +58,41 @@ def rough_split(logger=None):
 
 def fine_split(logger=None):
 	"""
-	Split train data (900,000 records) into training file and valdation 
+	Split train data (900,000 records) into 10 files
+	Split test data (1,000,000 records) into 10 files
 	"""
-	input_split_path = os.path.join('cwd', 'input_split_artifact')
+	input_split_path = os.path.join(cwd, 'input_split_artifact')
 	if not os.path.isdir(input_split_path): os.mkdir(input_split_path)
-	pass
-	# TBD
+	
+	for npy_path in ['train_idx_shuffle.npy', 'train_age.npy', 'train_gender.npy']:
+		with open(os.path.join(input_path, npy_path), 'rb') as f:
+			npy = np.load(f)
+		for i in range(10):
+			with open(os.path.join(input_split_path, '{}_{}.npy'.format(npy_path.split('.')[0], i+1)), 'wb') as f:
+				np.save(f, npy[i*90000:(i+1)*90000])
+		if logger: logger.info('{} splitted'.format(npy_path))
+	for pkl_path in ['train_creative_id_seq.pkl', 'train_ad_id_seq.pkl', 'train_advertiser_id_seq.pkl', 'train_product_id_seq.pkl',]:
+		with open(os.path.join(input_path, pkl_path), 'rb') as f:
+			pkl = pickle.load(f)
+		for i in range(10):
+			with open(os.path.join(input_split_path, '{}_{}.pkl'.format(pkl_path.split('.')[0], i+1)), 'wb') as f:
+				pickle.dump(pkl[i*90000:(i+1)*90000], f)
+		if logger: logger.info('{} splitted'.format(pkl_path))
+
+	for npy_path in ['test_idx_shuffle.npy']:
+		with open(os.path.join(input_path, npy_path), 'rb') as f:
+			npy = np.load(f)
+		for i in range(10):
+			with open(os.path.join(input_split_path, '{}_{}.npy'.format(npy_path.split('.')[0], i+1)), 'wb') as f:
+				np.save(f, npy[i*100000:(i+1)*100000])
+		if logger: logger.info('{} splitted'.format(npy_path))
+	for pkl_path in ['test_creative_id_seq.pkl', 'test_ad_id_seq.pkl', 'test_advertiser_id_seq.pkl', 'test_product_id_seq.pkl',]:
+		with open(os.path.join(input_path, pkl_path), 'rb') as f:
+			pkl = pickle.load(f)
+		for i in range(10):
+			with open(os.path.join(input_split_path, '{}_{}.pkl'.format(pkl_path.split('.')[0], i+1)), 'wb') as f:
+				pickle.dump(pkl[i*100000:(i+1)*100000], f)
+		if logger: logger.info('{} splitted'.format(pkl_path))
 
 
 if __name__=='__main__':
