@@ -41,9 +41,10 @@ Note that if the instance has no public internet connection, download [train fil
 * **Step 2**: run 
 ```bat
 python3 input_generate.py
+python3 input_split.py
 ```
 
-You should have the following files after execution.
+For machine with small memory please replace the second line with `python3 input_split.py fine`.You should have the following files after execution.
 
 ```
 |--Script
