@@ -50,7 +50,7 @@ def initiate_logger(log_path):
 	logger.info('===================================')
 	return logger
 
-def train(model, train_inp_tuple, validation_inp_tuple, checkpoint_dir, checkpoint_prefix, device, epoches=5, batch_size=1024, logger=None, epoch_start=0):
+def train(model, train_inp_tuple, validation_inp_tuple, checkpoint_dir, checkpoint_prefix, device, epoches=5, batch_size=1024, logger=None, epoch_start=0, max_seq_len=100):
 	"""
 	: model (torch.nn.module): model to be trained
 	: train_inp_tuple (list[tuple(str, list[str], list[str])]): list of input for train_data_loader
@@ -67,6 +67,7 @@ def train(model, train_inp_tuple, validation_inp_tuple, checkpoint_dir, checkpoi
 	: epoches (int): number of epoches to train
 	: batch_size (int): size of mini batch
 	: epoch_start (int): if = 0 then train a new model, else load an existing model and continue to train, default 0
+	: max_seq_len (int): max length for sequence input, default 100 
 	"""
 	global w2v_registry, model_path
 	gc.enable()
@@ -198,10 +199,12 @@ if __name__=='__main__':
 		logger.info('CUDA Memory: Total {:.2f} GB, Cached {:.2f} GB, Allocated {:.2f} GB'.format(t,c,a))
 
 	model = Multi_Seq_LSTM_Classifier([128, 128, 256, 256], [512, 512, 512, 512], 10)
-	train_inp_tuple = [(os.path.join(input_path, 'train_age.npy'), ['product', 'advertiser', 'creative', 'ad'], 
-		[os.path.join(input_path, 'train_product_id_seq.pkl'), os.path.join(input_path, 'train_advertiser_id_seq.pkl'),
-		 os.path.join(input_path, 'train_creative_id_seq.pkl'),os.path.join(input_path, 'train_ad_id_seq.pkl')])]
-	validation_inp_tuple = train_inp_tuple[:]
+	train_inp_tuple = [(os.path.join(input_path, 'train_age_tra.npy'), ['product', 'advertiser', 'creative', 'ad'], 
+		[os.path.join(input_path, 'train_product_id_seq_tra.pkl'), os.path.join(input_path, 'train_advertiser_id_seq_tra.pkl'),
+		 os.path.join(input_path, 'train_creative_id_seq_tra.pkl'),os.path.join(input_path, 'train_ad_id_seq_tra.pkl')])]
+	validation_inp_tuple = [(os.path.join(input_path, 'train_age_val.npy'), ['product', 'advertiser', 'creative', 'ad'], 
+		[os.path.join(input_path, 'train_product_id_seq_val.pkl'), os.path.join(input_path, 'train_advertiser_id_seq_val.pkl'),
+		 os.path.join(input_path, 'train_creative_id_seq_val.pkl'),os.path.join(input_path, 'train_ad_id_seq_val.pkl')])]
 	checkpoint_dir = os.path.join(model_path, 'Multi_Seq_LSTM_Classifier_Four_Seq_Age')
 	checkpoint_prefix = 'Multi_Seq_LSTM_Classifier_Four_Seq_Age'
 
