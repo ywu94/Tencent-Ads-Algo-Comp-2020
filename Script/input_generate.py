@@ -296,20 +296,3 @@ def generate(logger=None):
 if __name__=='__main__':
 	logger = initiate_logger('input_generate.log')
 	generate(logger=logger)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
