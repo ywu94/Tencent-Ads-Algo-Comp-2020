@@ -49,9 +49,11 @@ python3 train_gender_multi_seq_lstm_classifier.py 0 10 256 100 1e-4 split
   ```
   |--Script
     |--data_loader.py
+    |
     |--multi_seq_lstm_classifier.py
     |--train_age_multi_seq_lstm_classifier.py
     |--train_gender_multi_seq_lstm_classifier.py
+    |
     |--transformer_encoder_classifier.py
     |--train_age_transformer_encoder_classifier_with_creative.py
   ```
