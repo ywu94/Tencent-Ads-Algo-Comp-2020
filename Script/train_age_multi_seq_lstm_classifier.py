@@ -102,7 +102,7 @@ def train(model, train_inp_tuple, validation_inp_tuple, checkpoint_dir, checkpoi
 		train_running_loss, train_n_batch = 0, 0
 
 		for index, (label_artifact_path, seq_inp_target, seq_inp_path) in enumerate(train_inp_tuple, start=1):
-			train_loader = train_data_loader(label_artifact_path, seq_inp_target, seq_inp_path, w2v_registry, max_seq_len=max_seq_len)
+			train_loader = train_data_loader(label_artifact_path, seq_inp_target, seq_inp_path, w2v_registry, batch_size=batch_size, max_seq_len=max_seq_len)
 			train_iterator = iter(train_loader)
 			while True:
 				try:
@@ -145,7 +145,7 @@ def train(model, train_inp_tuple, validation_inp_tuple, checkpoint_dir, checkpoi
 		true_y, pred_y = [], []
 
 		for index, (label_artifact_path, seq_inp_target, seq_inp_path) in enumerate(validation_inp_tuple, start=1):
-			train_loader = train_data_loader(label_artifact_path, seq_inp_target, seq_inp_path, w2v_registry, max_seq_len=max_seq_len)
+			train_loader = train_data_loader(label_artifact_path, seq_inp_target, seq_inp_path, w2v_registry, batch_size=batch_size, max_seq_len=max_seq_len)
 			train_iterator = iter(train_loader)
 			while True:
 				try:
