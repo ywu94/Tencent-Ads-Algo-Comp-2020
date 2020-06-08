@@ -51,7 +51,7 @@ def initiate_logger(log_path):
 	logger.info('===================================')
 	return logger
 
-def train(model, train_inp_tuple, validation_inp_tuple, checkpoint_dir, checkpoint_prefix, device, epoches=5, batch_size=1024, logger=None, epoch_start=0, max_seq_len=100):
+def train(model, train_inp_tuple, validation_inp_tuple, checkpoint_dir, checkpoint_prefix, device, epoches=5, batch_size=1024, logger=None, epoch_start=0, max_seq_len=100, lr=1e-3):
 	"""
 	: model (torch.nn.module): model to be trained
 	: train_inp_tuple (list[tuple(str, list[str], list[str])]): list of input for train_data_loader
@@ -69,6 +69,7 @@ def train(model, train_inp_tuple, validation_inp_tuple, checkpoint_dir, checkpoi
 	: batch_size (int): size of mini batch
 	: epoch_start (int): if = 0 then train a new model, else load an existing model and continue to train, default 0
 	: max_seq_len (int): max length for sequence input, default 100 
+	: lr (float): learning rate for Adam, default 1e-3
 	"""
 	global w2v_registry, model_path
 	gc.enable()
@@ -85,7 +86,7 @@ def train(model, train_inp_tuple, validation_inp_tuple, checkpoint_dir, checkpoi
 	# Set up loss function and optimizer
 	model.to(device)
 	loss_fn = nn.CrossEntropyLoss()
-	optimizer = torch.optim.Adam(model.parameters())
+	optimizer = torch.optim.Adam(model.parameters(), lr=lr, amsgrad=True)
 
 	div, mod = divmod(810000, batch_size)
 	n_batch_estimate = div + min(mod, 1)
@@ -193,12 +194,13 @@ def train(model, train_inp_tuple, validation_inp_tuple, checkpoint_dir, checkpoi
 		torch.save(model.state_dict(), ck_file_path)
 
 if __name__=='__main__':
-	assert len(sys.argv)>=5
+	assert len(sys.argv)>=6
 	epoch_start = int(sys.argv[1])
 	epoches = int(sys.argv[2])
 	batch_size = int(sys.argv[3])
 	max_seq_len = int(sys.argv[4])
-	if len(sys.argv)>5:
+	lr = float(sys.argv[5])
+	if len(sys.argv)>6:
 		train_inp_tuple = [(os.path.join(input_split_path, 'train_age_{}.npy'.format(i)), ['creative'], 
 			[os.path.join(input_split_path, 'train_creative_id_seq_{}.pkl'.format(i))]) for i in range(1,10)]
 		validation_inp_tuple = [(os.path.join(input_split_path, 'train_age_{}.npy'.format(i)), ['creative'], 
@@ -228,4 +230,4 @@ if __name__=='__main__':
 	model = Transformer_Encoder_Classifier(256, 10, 4, 8, 1024, DEVICE).to(DEVICE)
 	
 	train(model, train_inp_tuple, validation_inp_tuple, checkpoint_dir, checkpoint_prefix, DEVICE, 
-		epoches=epoches, batch_size=batch_size, logger=logger, epoch_start=epoch_start, max_seq_len=max_seq_len)
+		epoches=epoches, batch_size=batch_size, logger=logger, epoch_start=epoch_start, max_seq_len=max_seq_len, lr=lr)

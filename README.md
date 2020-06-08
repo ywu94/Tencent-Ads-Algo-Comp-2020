@@ -24,8 +24,8 @@ python3 train_w2v.py creative 256
 python3 train_w2v.py ad 256
 python3 train_w2v.py advertiser 128
 python3 train_w2v.py product 128
-python3 train_age_multi_seq_lstm_classifier.py 0 10 1024 100 split
-python3 train_gender_multi_seq_lstm_classifier.py 0 10 1024 100 split
+python3 train_age_multi_seq_lstm_classifier.py 0 10 256 100 1e-4 split
+python3 train_gender_multi_seq_lstm_classifier.py 0 10 256 100 1e-4 split
 ```
 
 <a id='script_documentation'></a>
@@ -36,13 +36,14 @@ python3 train_gender_multi_seq_lstm_classifier.py 0 10 1024 100 split
 
 * How to run training script
 
-  Syntax: `python3 train_{some script name}.py 0 10 1024 100 split`
+  Syntax: `python3 train_{some script name}.py 0 10 256 100 1e-4 split`
   > **Argument**:
   > 1. *(Required,INT)* 0 means training from scratch and a positive number means loading the corresponding epoch and start training from there <br/>
   > 2. *(Required,INT)* number of epoches to train
   > 3. *(Required,INT)* batch size for training
   > 4. *(Required,INT)* maximal length of input sequence, smaller length can help train withb larger batch size
-  > 5. *(Optional)* If nothing specified then the model will be trained using unsplitted files. If `python3 input_split.py fine` has been executed and a value is specified the model will be trained using a list of splitted files. 
+  > 5. *(Required,FLOAT)* learning rate for adam optimizer
+  > 6. *(Optional)* If nothing specified then the model will be trained using unsplitted files. If `python3 input_split.py fine` has been executed and a value is specified the model will be trained using a list of splitted files. 
   
 * Training script inventory
   ```
@@ -51,6 +52,8 @@ python3 train_gender_multi_seq_lstm_classifier.py 0 10 1024 100 split
     |--multi_seq_lstm_classifier.py
     |--train_age_multi_seq_lstm_classifier.py
     |--train_gender_multi_seq_lstm_classifier.py
+    |--transformer_encoder_classifier.py
+    |--train_age_transformer_encoder_classifier_with_creative.py
   ```
   
 <a id='data_preparation'></a>
