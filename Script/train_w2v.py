@@ -57,7 +57,7 @@ def train(target, embed_size, logger=None):
 	model = Word2Vec(sentences=corpus, size=embed_size, window=64, sg=0, hs=0, negative=20, cbow_mean=1, min_count=1, workers=16)
 	if logger: logger.info('{} w2v training is done after {:.2f}s'.format(target.capitalize(), time.time()-start))
 
-	save_path = os.path.join(embed_path, f'{target}_embed_s{embed_size}_')
+	save_path = os.path.join(embed_path, '{}_embed_s{}_'.format(target, embed_size))
 	with tempfile.NamedTemporaryFile(prefix=save_path, delete=False) as tmp:
 		tmp_file_path = tmp.name
 		model.save(tmp_file_path)
