@@ -54,10 +54,10 @@ def train(target, embed_size, logger=None):
 		corpus = pickle.load(f)
 	if logger: logger.info('{} corpus is loaded after {:.2f}s'.format(target.capitalize(), time.time()-start))
 
-	model = Word2Vec(sentences=corpus, size=embed_size, window=64, sg=0, hs=0, negative=20, cbow_mean=1, min_count=1, workers=16)
+	model = Word2Vec(sentences=corpus, size=embed_size, window=175, sg=1, hs=1, min_count=1, workers=16)
 	if logger: logger.info('{} w2v training is done after {:.2f}s'.format(target.capitalize(), time.time()-start))
 
-	save_path = os.path.join(embed_path, '{}_embed_s{}_'.format(target, embed_size))
+	save_path = os.path.join(embed_path, '{}_sg_embed_s{}_'.format(target, embed_size))
 	with tempfile.NamedTemporaryFile(prefix=save_path, delete=False) as tmp:
 		tmp_file_path = tmp.name
 		model.save(tmp_file_path)

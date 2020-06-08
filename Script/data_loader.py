@@ -60,7 +60,7 @@ class train_data_loader(object):
 		self.logger = logger
 		self.shuffle = shuffle
 
-		if not gc.isenabled: gc.enable()
+		if not gc.isenabled(): gc.enable()
 
 		self.label = None
 		self._load_label()
@@ -155,7 +155,7 @@ class test_data_loader(object):
 		self.batch_size = batch_size
 		self.logger = logger
 
-		if not gc.isenabled: gc.enable()
+		if not gc.isenabled(): gc.enable()
 
 		self.inp_seq = []
 		self._load_seq_inp()
