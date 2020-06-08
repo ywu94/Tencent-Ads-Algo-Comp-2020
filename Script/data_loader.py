@@ -111,7 +111,7 @@ class train_data_loader(object):
 			x_seq = [torch.nn.utils.rnn.pad_sequence([seq[i] for i in cur_index], batch_first=True, padding_value=0) for seq in self.inp_seq]
 			x_seq_last_idx = self.inp_last_idx[cur_index]
 			self.cur_batch += 1
-			return y, x_seq, x_seq_last_idx-1
+			return y, x_seq, x_seq_last_idx
 
 class test_data_loader(object):
 	"""

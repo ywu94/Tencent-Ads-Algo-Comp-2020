@@ -4,6 +4,14 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 
+def get_torch_module_num_of_parameter(model):
+	"""
+	Get # of parameters in a torch module.
+	"""
+    model_parameters = filter(lambda p: p.requires_grad, model.parameters())
+    params = sum([np.prod(p.size()) for p in model_parameters])
+    return params
+
 class LSTM_Extraction_Layer(nn.Module):
 	"""
 	LSTM feature extration layer
