@@ -141,7 +141,7 @@ class Transformer_Encoder_Classifier(nn.Module):
 		out = self.encoder_layer(inp_embed, inp_padding_mask=inp_padding_mask)               # (batch_size, n_step, embed_size)
 		pooled_buf = []
 		for index, last_idx in enumerate(inp_last_idx):
-			pooled_buf.append(torch.mean(out[index,:last_idx+1,:], dim=0))
+			pooled_buf.append(torch.max(out[index,:last_idx+1,:], dim=0)[0])
 		out = torch.stack(pooled_buf)                                                        # (batch_size, embed_size)
 		out = self.classification_layer(out)                                                 # (batch_size, out_size)
 		return out
