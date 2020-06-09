@@ -56,6 +56,9 @@ python3 train_gender_multi_seq_lstm_classifier.py 0 10 256 100 1e-3 split
     |
     |--transformer_encoder_classifier.py
     |--train_age_transformer_encoder_classifier_with_creative.py
+    |
+    |--GNMT_classifier.py
+    |--train_age_GNMT_classifier_with_creative.py
   ```
   
 <a id='data_preparation'></a>
