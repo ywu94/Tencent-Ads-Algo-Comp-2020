@@ -216,8 +216,7 @@ if __name__=='__main__':
 		checkpoint_prefix = 'Transformer_Encoder_Classifier_Creative_Age'
 
 	logger = initiate_logger('Transformer_Encoder_Classifier_Creative_Age.log')
-	logger.info('Epoch Start: {}， Epoch to Train: {}, Batch Size: {}, Max Sequence Length: {}'.format(epoch_start, epoches, batch_size, max_seq_len))
-
+	logger.info('Epoch Start: {}， Epoch to Train: {}, Batch Size: {}, Max Sequence Length: {}, Learning Rate: {}'.format(epoch_start, epoches, batch_size, max_seq_len, lr))
 	DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 	logger.info('Device in Use: {}'.format(DEVICE))
 	if torch.cuda.is_available():

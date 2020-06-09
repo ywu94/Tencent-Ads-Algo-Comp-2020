@@ -220,7 +220,7 @@ if __name__=='__main__':
 		checkpoint_prefix = 'Multi_Seq_LSTM_Classifier_Four_Seq_Gender'
 
 	logger = initiate_logger('Multi_Seq_LSTM_Classifier_Four_Seq_Gender.log')
-	logger.info('Epoch Start: {}， Epoch to Train: {}, Batch Size: {}, Max Sequence Length: {}'.format(epoch_start, epoches, batch_size, max_seq_len))
+	logger.info('Epoch Start: {}， Epoch to Train: {}, Batch Size: {}, Max Sequence Length: {}, Learning Rate: {}'.format(epoch_start, epoches, batch_size, max_seq_len, lr))
 
 	DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 	logger.info('Device in Use: {}'.format(DEVICE))

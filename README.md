@@ -24,8 +24,8 @@ python3 train_w2v.py creative 256
 python3 train_w2v.py ad 256
 python3 train_w2v.py advertiser 128
 python3 train_w2v.py product 128
-python3 train_age_multi_seq_lstm_classifier.py 0 10 256 100 1e-4 split
-python3 train_gender_multi_seq_lstm_classifier.py 0 10 256 100 1e-4 split
+python3 train_age_multi_seq_lstm_classifier.py 0 10 256 100 1e-3 split
+python3 train_gender_multi_seq_lstm_classifier.py 0 10 256 100 1e-3 split
 ```
 
 <a id='script_documentation'></a>
@@ -36,7 +36,7 @@ python3 train_gender_multi_seq_lstm_classifier.py 0 10 256 100 1e-4 split
 
 * How to run training script
 
-  Syntax: `python3 train_{some script name}.py 0 10 256 100 1e-4 split`
+  Syntax: `python3 train_{some script name}.py 0 10 256 100 1e-3 split`
   > **Argument**:
   > 1. *(Required,INT)* 0 means training from scratch and a positive number means loading the corresponding epoch and start training from there <br/>
   > 2. *(Required,INT)* number of epoches to train
