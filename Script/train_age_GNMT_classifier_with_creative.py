@@ -17,7 +17,7 @@ from torch import nn
 import torch.nn.functional as F
 
 from data_loader import train_data_loader, test_data_loader
-from multi_seq_lstm_classifier import LSTM_Extraction_Layer, MLP_Classification_Layer, Multi_Seq_LSTM_Classifier
+from GNMT_classifier import GNMT_Classifier
 
 cwd = os.getcwd()
 train_path = os.path.join(cwd, 'train_artifact')
@@ -120,7 +120,7 @@ def train(model, train_inp_tuple, validation_inp_tuple, checkpoint_dir, checkpoi
 					x = []
 					for s in x_seq:
 						x.append(s.to(device))
-					x.append(x_last_idx)
+					x.append(x_last_idx+1)
 					optimizer.zero_grad()
 					yp = F.softmax(model(*x), dim=1)
 					loss = loss_fn(yp, y)
@@ -163,7 +163,7 @@ def train(model, train_inp_tuple, validation_inp_tuple, checkpoint_dir, checkpoi
 					x = []
 					for s in x_seq:
 						x.append(s.to(device))
-					x.append(x_last_idx)
+					x.append(x_last_idx+1)
 					yp = F.softmax(model(*x), dim=1)
 					loss = loss_fn(yp, y)
 
@@ -209,27 +209,22 @@ if __name__=='__main__':
 	max_seq_len = int(sys.argv[4])
 	lr = float(sys.argv[5])
 	if len(sys.argv)>6:
-		train_inp_tuple = [(os.path.join(input_split_path, 'train_age_{}.npy'.format(i)), ['product', 'advertiser', 'creative', 'ad'], 
-			[os.path.join(input_split_path, 'train_product_id_seq_{}.pkl'.format(i)), os.path.join(input_split_path, 'train_advertiser_id_seq_{}.pkl'.format(i)),
-			 os.path.join(input_split_path, 'train_creative_id_seq_{}.pkl'.format(i)),os.path.join(input_split_path, 'train_ad_id_seq_{}.pkl'.format(i))]) for i in range(1,10)]
-		validation_inp_tuple = [(os.path.join(input_split_path, 'train_age_{}.npy'.format(i)), ['product', 'advertiser', 'creative', 'ad'], 
-			[os.path.join(input_split_path, 'train_product_id_seq_{}.pkl'.format(i)), os.path.join(input_split_path, 'train_advertiser_id_seq_{}.pkl'.format(i)),
-			 os.path.join(input_split_path, 'train_creative_id_seq_{}.pkl'.format(i)),os.path.join(input_split_path, 'train_ad_id_seq_{}.pkl'.format(i))]) for i in range(10,11)]
-		checkpoint_dir = os.path.join(model_path, 'Multi_Seq_LSTM_Classifier_Four_Seq_Age')
-		checkpoint_prefix = 'Multi_Seq_LSTM_Classifier_Four_Seq_Age'
+		train_inp_tuple = [(os.path.join(input_split_path, 'train_age_{}.npy'.format(i)), ['creative'], 
+			[os.path.join(input_split_path, 'train_creative_id_seq_{}.pkl'.format(i))]) for i in range(1,10)]
+		validation_inp_tuple = [(os.path.join(input_split_path, 'train_age_{}.npy'.format(i)), ['creative'], 
+			[os.path.join(input_split_path, 'train_creative_id_seq_{}.pkl'.format(i))]) for i in range(10,11)]
+		checkpoint_dir = os.path.join(model_path, 'GNMT_Classifier_Creative_Age')
+		checkpoint_prefix = 'GNMT_Classifier_Creative_Age'
 	else:
-		train_inp_tuple = [(os.path.join(input_path, 'train_age_tra.npy'), ['product', 'advertiser', 'creative', 'ad'], 
-			[os.path.join(input_path, 'train_product_id_seq_tra.pkl'), os.path.join(input_path, 'train_advertiser_id_seq_tra.pkl'),
-			 os.path.join(input_path, 'train_creative_id_seq_tra.pkl'),os.path.join(input_path, 'train_ad_id_seq_tra.pkl')])]
-		validation_inp_tuple = [(os.path.join(input_path, 'train_age_val.npy'), ['product', 'advertiser', 'creative', 'ad'], 
-			[os.path.join(input_path, 'train_product_id_seq_val.pkl'), os.path.join(input_path, 'train_advertiser_id_seq_val.pkl'),
-			 os.path.join(input_path, 'train_creative_id_seq_val.pkl'),os.path.join(input_path, 'train_ad_id_seq_val.pkl')])]
-		checkpoint_dir = os.path.join(model_path, 'Multi_Seq_LSTM_Classifier_Four_Seq_Age')
-		checkpoint_prefix = 'Multi_Seq_LSTM_Classifier_Four_Seq_Age'
+		train_inp_tuple = [(os.path.join(input_path, 'train_age_tra.npy'), ['creative'], 
+			[os.path.join(input_path, 'train_creative_id_seq_tra.pkl')])]
+		validation_inp_tuple = [(os.path.join(input_path, 'train_age_val.npy'), ['creative'], 
+			[os.path.join(input_path, 'train_creative_id_seq_val.pkl')])]
+		checkpoint_dir = os.path.join(model_path, 'GNMT_Classifier_Creative_Age')
+		checkpoint_prefix = 'GNMT_Classifier_Creative_Age'
 
-	logger = initiate_logger('Multi_Seq_LSTM_Classifier_Four_Seq_Age.log')
+	logger = initiate_logger('GNMT_Classifier_Creative_Age.log')
 	logger.info('Epoch Start: {}， Epoch to Train: {}, Batch Size: {}, Max Sequence Length: {}, Learning Rate: {}'.format(epoch_start, epoches, batch_size, max_seq_len, lr))
-
 	DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 	logger.info('Device in Use: {}'.format(DEVICE))
 	if torch.cuda.is_available():
@@ -239,7 +234,7 @@ if __name__=='__main__':
 		a = torch.cuda.memory_allocated(DEVICE)/1024**3
 		logger.info('CUDA Memory: Total {:.2f} GB, Cached {:.2f} GB, Allocated {:.2f} GB'.format(t,c,a))
 
-	model = Multi_Seq_LSTM_Classifier([128, 128, 256, 256], [256, 256, 256, 256], 10)
+	model = GNMT_Classifier(10,128,128,8,8,DEVICE).to(DEVICE)
 
 	logger.info('Model Parameter #: {}'.format(get_torch_module_num_of_parameter(model)))
 	

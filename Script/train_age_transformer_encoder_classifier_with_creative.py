@@ -51,6 +51,14 @@ def initiate_logger(log_path):
 	logger.info('===================================')
 	return logger
 
+def get_torch_module_num_of_parameter(model):
+	"""
+	Get # of parameters in a torch module.
+	"""
+	model_parameters = filter(lambda p: p.requires_grad, model.parameters())
+	params = sum([np.prod(p.size()) for p in model_parameters])
+	return params
+
 def train(model, train_inp_tuple, validation_inp_tuple, checkpoint_dir, checkpoint_prefix, device, epoches=5, batch_size=1024, logger=None, epoch_start=0, max_seq_len=100, lr=1e-3):
 	"""
 	: model (torch.nn.module): model to be trained
@@ -226,7 +234,9 @@ if __name__=='__main__':
 		a = torch.cuda.memory_allocated(DEVICE)/1024**3
 		logger.info('CUDA Memory: Total {:.2f} GB, Cached {:.2f} GB, Allocated {:.2f} GB'.format(t,c,a))
 
-	model = Transformer_Encoder_Classifier(256, 10, 4, 8, 1024, DEVICE).to(DEVICE)
+	model = Transformer_Encoder_Classifier(128, 10, 4, 8, 1024, DEVICE).to(DEVICE)
+
+	logger.info('Model Parameter #: {}'.format(get_torch_module_num_of_parameter(model)))
 	
 	train(model, train_inp_tuple, validation_inp_tuple, checkpoint_dir, checkpoint_prefix, DEVICE, 
 		epoches=epoches, batch_size=batch_size, logger=logger, epoch_start=epoch_start, max_seq_len=max_seq_len, lr=lr)
