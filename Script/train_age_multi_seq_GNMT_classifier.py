@@ -239,7 +239,7 @@ if __name__=='__main__':
 		a = torch.cuda.memory_allocated(DEVICE)/1024**3
 		logger.info('CUDA Memory: Total {:.2f} GB, Cached {:.2f} GB, Allocated {:.2f} GB'.format(t,c,a))
 
-	model = Multi_Seq_GNMT_Classifier(10, [128, 128, 256, 256], [128, 128, 256, 256], 8, 8)
+	model = Multi_Seq_GNMT_Classifier(10, [128, 128, 256, 256], [128, 128, 256, 256], 8, 8, device=DEVICE)
 
 	logger.info('Model Parameter #: {}'.format(get_torch_module_num_of_parameter(model)))
 	
