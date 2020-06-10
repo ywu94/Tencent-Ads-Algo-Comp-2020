@@ -1,18 +1,67 @@
 # Tencent-Ads-Algo-Comp-2020
 
+[![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://lbesson.mit-license.org/) 
+
 Git repo for Tencent Advertisement Algorithm Competition 
 
-## Script
+* [Quick Start](#quick_start)
+* [Script Documentation](#script_documentation)
+  * [Model Training](#model_training)
+  * [Data Preparation](#data_preparation)
+* [Materials](#material)
 
-### Model Training Utility
+---
+
+<a id='quick_start'></a>
+## Quick Start
+
+```bat
+cd ./Script
+. prerequisite.sh
+python3 input_generate.py
+python3 input_split.py fine
+python3 train_w2v.py creative 256
+python3 train_w2v.py ad 256
+python3 train_w2v.py advertiser 128
+python3 train_w2v.py product 128
+python3 train_age_multi_seq_lstm_classifier.py 0 10 256 100 1e-3 split
+python3 train_gender_multi_seq_lstm_classifier.py 0 10 256 100 1e-3 split
 ```
-|--Script
-  |--data_loader.py
-  |--multi_seq_lstm_classifier.py
-  |--sample_training_script_multi_seq_lstm_classifier.py
-```
 
+<a id='script_documentation'></a>
+## Script Documentation
 
+<a id='model_training'></a>
+### Model Training
+
+* How to run training script
+
+  Syntax: `python3 train_{some script name}.py 0 10 256 100 1e-3 split`
+  > **Argument**:
+  > 1. *(Required,INT)* 0 means training from scratch and a positive number means loading the corresponding epoch and start training from there <br/>
+  > 2. *(Required,INT)* number of epoches to train
+  > 3. *(Required,INT)* batch size for training
+  > 4. *(Required,INT)* maximal length of input sequence, smaller length can help train withb larger batch size
+  > 5. *(Required,FLOAT)* learning rate for adam optimizer
+  > 6. *(Optional)* If nothing specified then the model will be trained using unsplitted files. If `python3 input_split.py fine` has been executed and a value is specified the model will be trained using a list of splitted files. 
+  
+* Training script inventory
+  ```
+  |--Script
+    |--data_loader.py
+    |
+    |--multi_seq_lstm_classifier.py
+    |--train_age_multi_seq_lstm_classifier.py
+    |--train_gender_multi_seq_lstm_classifier.py
+    |
+    |--transformer_encoder_classifier.py
+    |--train_age_transformer_encoder_classifier_with_creative.py
+    |
+    |--GNMT_classifier.py
+    |--train_age_GNMT_classifier_with_creative.py
+  ```
+  
+<a id='data_preparation'></a>
 ### Data Preparation
 
 * **Step 1**: run 
@@ -103,12 +152,12 @@ You should have the following files after exection.
 
 Note that `w2v_registry.json` stores all the w2v model artifact paths.
 
-
+<a id='material'></a>
 ## Materials
 
 * 官方竞赛手册: [PDF](https://algo-1256087447.cos.ap-nanjing.myqcloud.com/admin/20200509/7da104bd074309285ab56a6e52150ba3.pdf)
 
-* 赛题理解与思路: [思路byCHIZHU](https://mp.weixin.qq.com/s/ISQjOGcc_spSNVeeg75d8w), [分析by鱼遇](https://zhuanlan.zhihu.com/p/141288029), [思路byby鱼遇](https://zhuanlan.zhihu.com/p/143185271), [Baseline 1](https://zhuanlan.zhihu.com/p/141842643), [Baseline 2](https://zhuanlan.zhihu.com/p/139270681), [Baseline 3](https://zhuanlan.zhihu.com/p/144346714)
+* 赛题理解与思路: [思路byCHIZHU](https://mp.weixin.qq.com/s/ISQjOGcc_spSNVeeg75d8w), [分析by鱼遇](https://zhuanlan.zhihu.com/p/141288029), [思路by鱼遇](https://zhuanlan.zhihu.com/p/143185271), [Baseline 1](https://zhuanlan.zhihu.com/p/141842643), [Baseline 2](https://zhuanlan.zhihu.com/p/139270681), [Baseline 3](https://zhuanlan.zhihu.com/p/144346714)
 
 * 往届回顾: [17~19](https://zhuanlan.zhihu.com/p/116907937)
 

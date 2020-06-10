@@ -4,6 +4,14 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 
+def get_torch_module_num_of_parameter(model):
+	"""
+	Get # of parameters in a torch module.
+	"""
+	model_parameters = filter(lambda p: p.requires_grad, model.parameters())
+	params = sum([np.prod(p.size()) for p in model_parameters])
+	return params
+
 class LSTM_Extraction_Layer(nn.Module):
 	"""
 	LSTM feature extration layer
@@ -92,7 +100,7 @@ class Multi_Seq_LSTM_Classifier(nn.Module):
 	def forward(self, *args):
 		assert len(args)==self.n_extraction+1
 		
-		extract_buffer = [getattr(self, 'extraction_layer_{}.format(index)')(inp_embed, args[-1]) for index, inp_embed in enumerate(args[:-1])]
+		extract_buffer = [getattr(self, 'extraction_layer_{}'.format(index))(inp_embed, args[-1]) for index, inp_embed in enumerate(args[:-1])]
 		out = torch.cat(extract_buffer, 1)
 		out = self.classification_layer(out)
 		
