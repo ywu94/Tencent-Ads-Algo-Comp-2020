@@ -16,15 +16,14 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 
-torch.backends.cudnn.deterministic = True
-
 from data_loader import train_data_loader, test_data_loader
-from multi_seq_lstm_classifier import LSTM_Extraction_Layer, MLP_Classification_Layer, Multi_Seq_LSTM_Classifier
+from multi_seq_GNMT_classifier import Multi_Seq_GNMT_Classifier
 
 cwd = os.getcwd()
 train_path = os.path.join(cwd, 'train_artifact')
 test_path = os.path.join(cwd, 'test_artifact')
 input_path = os.path.join(cwd, 'input_artifact')
+input_split_path = os.path.join(cwd, 'input_split_artifact')
 embed_path = os.path.join(cwd, 'embed_artifact')
 model_path = os.path.join(cwd, 'model_artifact')
 
@@ -52,7 +51,15 @@ def initiate_logger(log_path):
 	logger.info('===================================')
 	return logger
 
-def train(model, train_inp_tuple, validation_inp_tuple, checkpoint_dir, checkpoint_prefix, device, epoches=5, batch_size=1024, logger=None, epoch_start=0, max_seq_len=100):
+def get_torch_module_num_of_parameter(model):
+	"""
+	Get # of parameters in a torch module.
+	"""
+	model_parameters = filter(lambda p: p.requires_grad, model.parameters())
+	params = sum([np.prod(p.size()) for p in model_parameters])
+	return params
+
+def train(model, train_inp_tuple, validation_inp_tuple, checkpoint_dir, checkpoint_prefix, device, epoches=5, batch_size=1024, logger=None, epoch_start=0, max_seq_len=100, lr=1e-3):
 	"""
 	: model (torch.nn.module): model to be trained
 	: train_inp_tuple (list[tuple(str, list[str], list[str])]): list of input for train_data_loader
@@ -70,6 +77,7 @@ def train(model, train_inp_tuple, validation_inp_tuple, checkpoint_dir, checkpoi
 	: batch_size (int): size of mini batch
 	: epoch_start (int): if = 0 then train a new model, else load an existing model and continue to train, default 0
 	: max_seq_len (int): max length for sequence input, default 100 
+	: lr (float): learning rate for Adam, default 1e-3
 	"""
 	global w2v_registry, model_path
 	gc.enable()
@@ -86,7 +94,10 @@ def train(model, train_inp_tuple, validation_inp_tuple, checkpoint_dir, checkpoi
 	# Set up loss function and optimizer
 	model.to(device)
 	loss_fn = nn.CrossEntropyLoss()
-	optimizer = torch.optim.Adam(model.parameters())
+	optimizer = torch.optim.Adam(model.parameters(), lr=lr, amsgrad=True)
+
+	div, mod = divmod(810000, batch_size)
+	n_batch_estimate = div + min(mod, 1)
 
 	# Main Loop
 	for epoch in range(1+epoch_start, epoches+1+epoch_start):
@@ -100,7 +111,7 @@ def train(model, train_inp_tuple, validation_inp_tuple, checkpoint_dir, checkpoi
 		train_running_loss, train_n_batch = 0, 0
 
 		for index, (label_artifact_path, seq_inp_target, seq_inp_path) in enumerate(train_inp_tuple, start=1):
-			train_loader = train_data_loader(label_artifact_path, seq_inp_target, seq_inp_path, w2v_registry)
+			train_loader = train_data_loader(label_artifact_path, seq_inp_target, seq_inp_path, w2v_registry, batch_size=batch_size, max_seq_len=max_seq_len)
 			train_iterator = iter(train_loader)
 			while True:
 				try:
@@ -109,7 +120,7 @@ def train(model, train_inp_tuple, validation_inp_tuple, checkpoint_dir, checkpoi
 					x = []
 					for s in x_seq:
 						x.append(s.to(device))
-					x.append(x_last_idx)
+					x.append(x_last_idx+1)
 					optimizer.zero_grad()
 					yp = F.softmax(model(*x), dim=1)
 					loss = loss_fn(yp, y)
@@ -121,10 +132,13 @@ def train(model, train_inp_tuple, validation_inp_tuple, checkpoint_dir, checkpoi
 					train_running_loss += loss.item()
 					train_n_batch += 1
 
+					if train_n_batch%100==0 and logger:
+						logger.info('Epoch {}/{} - Batch {}/{} Done - Train Loss: {:.6f}'.format(epoch, epoches+epoch_start, train_n_batch, n_batch_estimate, train_running_loss/train_n_batch))
 					del x, y, yp, x_seq, x_last_idx
 					_ = gc.collect()
 					torch.cuda.empty_cache()
-				except:
+
+				except StopIteration:
 					break
 
 			del train_loader, train_iterator
@@ -132,7 +146,7 @@ def train(model, train_inp_tuple, validation_inp_tuple, checkpoint_dir, checkpoi
 			torch.cuda.empty_cache()
 
 			if logger:
-				logger.info('Epoch {}/{} - Train {}/{} Done - Train Loss: {:.6f}'.format(epoch, epoches+epoch_start, index, len(train_inp_tuple), train_running_loss/train_n_batch))
+				logger.info('Epoch {}/{} - Batch {}/{} Done - Train Loss: {:.6f}'.format(epoch, epoches+epoch_start, train_n_batch, n_batch_estimate, train_running_loss/train_n_batch))
 
 		# Evaluate model
 		model.eval()
@@ -140,7 +154,7 @@ def train(model, train_inp_tuple, validation_inp_tuple, checkpoint_dir, checkpoi
 		true_y, pred_y = [], []
 
 		for index, (label_artifact_path, seq_inp_target, seq_inp_path) in enumerate(validation_inp_tuple, start=1):
-			train_loader = train_data_loader(label_artifact_path, seq_inp_target, seq_inp_path, w2v_registry)
+			train_loader = train_data_loader(label_artifact_path, seq_inp_target, seq_inp_path, w2v_registry, batch_size=batch_size, max_seq_len=max_seq_len)
 			train_iterator = iter(train_loader)
 			while True:
 				try:
@@ -149,7 +163,7 @@ def train(model, train_inp_tuple, validation_inp_tuple, checkpoint_dir, checkpoi
 					x = []
 					for s in x_seq:
 						x.append(s.to(device))
-					x.append(x_last_idx)
+					x.append(x_last_idx+1)
 					yp = F.softmax(model(*x), dim=1)
 					loss = loss_fn(yp, y)
 
@@ -162,7 +176,8 @@ def train(model, train_inp_tuple, validation_inp_tuple, checkpoint_dir, checkpoi
 					del x, y, yp, x_seq, x_last_idx
 					_ = gc.collect()
 					torch.cuda.empty_cache()
-				except:
+
+				except StopIteration:
 					break
 
 			del train_loader, train_iterator
@@ -187,30 +202,46 @@ def train(model, train_inp_tuple, validation_inp_tuple, checkpoint_dir, checkpoi
 		torch.save(model.state_dict(), ck_file_path)
 
 if __name__=='__main__':
-	epoch_start = int(sys.argv[1]) if len(sys.argv)>=2 else 0
+	assert len(sys.argv)>=6
+	epoch_start = int(sys.argv[1])
+	epoches = int(sys.argv[2])
+	batch_size = int(sys.argv[3])
+	max_seq_len = int(sys.argv[4])
+	lr = float(sys.argv[5])
+	if len(sys.argv)>6:
+		train_inp_tuple = [(os.path.join(input_split_path, 'train_age_{}.npy'.format(i)), ['product', 'advertiser', 'creative', 'ad'], 
+			[os.path.join(input_split_path, 'train_product_id_seq_{}.pkl'.format(i)), os.path.join(input_split_path, 'train_advertiser_id_seq_{}.pkl'.format(i)),
+			 os.path.join(input_split_path, 'train_creative_id_seq_{}.pkl'.format(i)),os.path.join(input_split_path, 'train_ad_id_seq_{}.pkl'.format(i))]) for i in range(1,10)]
+		validation_inp_tuple = [(os.path.join(input_split_path, 'train_age_{}.npy'.format(i)), ['product', 'advertiser', 'creative', 'ad'], 
+			[os.path.join(input_split_path, 'train_product_id_seq_{}.pkl'.format(i)), os.path.join(input_split_path, 'train_advertiser_id_seq_{}.pkl'.format(i)),
+			 os.path.join(input_split_path, 'train_creative_id_seq_{}.pkl'.format(i)),os.path.join(input_split_path, 'train_ad_id_seq_{}.pkl'.format(i))]) for i in range(10,11)]
+		checkpoint_dir = os.path.join(model_path, 'Multi_Seq_GNMT_Classifier_Four_Seq_Age')
+		checkpoint_prefix = 'Multi_Seq_GNMT_Classifier_Four_Seq_Age'
+	else:
+		train_inp_tuple = [(os.path.join(input_path, 'train_age_tra.npy'), ['product', 'advertiser', 'creative', 'ad'], 
+			[os.path.join(input_path, 'train_product_id_seq_tra.pkl'), os.path.join(input_path, 'train_advertiser_id_seq_tra.pkl'),
+			 os.path.join(input_path, 'train_creative_id_seq_tra.pkl'),os.path.join(input_path, 'train_ad_id_seq_tra.pkl')])]
+		validation_inp_tuple = [(os.path.join(input_path, 'train_age_val.npy'), ['product', 'advertiser', 'creative', 'ad'], 
+			[os.path.join(input_path, 'train_product_id_seq_val.pkl'), os.path.join(input_path, 'train_advertiser_id_seq_val.pkl'),
+			 os.path.join(input_path, 'train_creative_id_seq_val.pkl'),os.path.join(input_path, 'train_ad_id_seq_val.pkl')])]
+		checkpoint_dir = os.path.join(model_path, 'Multi_Seq_GNMT_Classifier_Four_Seq_Age')
+		checkpoint_prefix = 'Multi_Seq_GNMT_Classifier_Four_Seq_Age'
 
-	logger = initiate_logger('train_product_creative_age.log')
+	logger = initiate_logger('Multi_Seq_GNMT_Classifier_Four_Seq_Age.log')
+	logger.info('Epoch Start: {}， Epoch to Train: {}, Batch Size: {}, Max Sequence Length: {}, Learning Rate: {}'.format(epoch_start, epoches, batch_size, max_seq_len, lr))
 
 	DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 	logger.info('Device in Use: {}'.format(DEVICE))
-	if DEVICE=='cuda':
+	if torch.cuda.is_available():
 		torch.cuda.empty_cache()
 		t = torch.cuda.get_device_properties(DEVICE).total_memory/1024**3
 		c = torch.cuda.memory_cached(DEVICE)/1024**3
 		a = torch.cuda.memory_allocated(DEVICE)/1024**3
 		logger.info('CUDA Memory: Total {:.2f} GB, Cached {:.2f} GB, Allocated {:.2f} GB'.format(t,c,a))
 
-	model = Multi_Seq_LSTM_Classifier([128, 128, 256, 256], [512, 512, 512, 512], 10)
-	train_inp_tuple = [(os.path.join(input_path, 'train_age_tra.npy'), ['product', 'advertiser', 'creative', 'ad'], 
-		[os.path.join(input_path, 'train_product_id_seq_tra.pkl'), os.path.join(input_path, 'train_advertiser_id_seq_tra.pkl'),
-		 os.path.join(input_path, 'train_creative_id_seq_tra.pkl'),os.path.join(input_path, 'train_ad_id_seq_tra.pkl')])]
-	validation_inp_tuple = [(os.path.join(input_path, 'train_age_val.npy'), ['product', 'advertiser', 'creative', 'ad'], 
-		[os.path.join(input_path, 'train_product_id_seq_val.pkl'), os.path.join(input_path, 'train_advertiser_id_seq_val.pkl'),
-		 os.path.join(input_path, 'train_creative_id_seq_val.pkl'),os.path.join(input_path, 'train_ad_id_seq_val.pkl')])]
-	checkpoint_dir = os.path.join(model_path, 'Multi_Seq_LSTM_Classifier_Four_Seq_Age')
-	checkpoint_prefix = 'Multi_Seq_LSTM_Classifier_Four_Seq_Age'
+	model = Multi_Seq_GNMT_Classifier(10, [128, 128, 256, 256], [128, 128, 256, 256], 8, 8)
 
-	train(model, train_inp_tuple, validation_inp_tuple, checkpoint_dir, checkpoint_prefix, DEVICE, epoches=5, batch_size=1024, logger=logger, epoch_start=epoch_start)
-
-
-
+	logger.info('Model Parameter #: {}'.format(get_torch_module_num_of_parameter(model)))
+	
+	train(model, train_inp_tuple, validation_inp_tuple, checkpoint_dir, checkpoint_prefix, DEVICE, 
+		epoches=epoches, batch_size=batch_size, logger=logger, epoch_start=epoch_start, max_seq_len=max_seq_len, lr=lr)
