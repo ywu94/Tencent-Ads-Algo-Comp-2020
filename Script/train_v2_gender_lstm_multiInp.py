@@ -95,7 +95,7 @@ def train(model, task, y_list, x_list, checkpoint_dir, checkpoint_prefix, device
 	model.to(device)
 	loss_fn = nn.CrossEntropyLoss()
 	optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
-	scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.3, patience=1, verbose=True)
+	scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=0)
 
 	# Main Loop
 	for epoch, file_idx_list in task:
@@ -192,6 +192,8 @@ def train(model, task, y_list, x_list, checkpoint_dir, checkpoint_prefix, device
 			logger.info('Epoch {}/{} Done - Test Loss: {:.6f}, Test Accuracy: {:.6f}'.format(epoch, task[-1][0], test_running_loss/test_n_batch, acc_score))
 
 		scheduler.step(test_running_loss/test_n_batch)
+		if logger:
+			logger.info('Epoch {}/{} - Updated Learning Rate: {:.8f}'.format(epoch, task[-1][0], optimizer.param_groups[0]['lr']))
 
 if __name__=='__main__':
 	assert len(sys.argv) in (5, 7)
