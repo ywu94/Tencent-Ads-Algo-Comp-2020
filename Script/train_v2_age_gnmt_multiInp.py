@@ -17,7 +17,7 @@ from torch import nn
 import torch.nn.functional as F
 
 from data_loader_v2 import data_loader_v2, wv_loader_v2
-from clf_tf_enc import Transformer_Encoder_Classifier
+from clf_gnmt import Multi_Seq_GNMT_Classifier
 
 cwd = os.getcwd()
 train_path = os.path.join(cwd, 'train_artifact')
@@ -108,7 +108,7 @@ def train(model, task, y_list, x_list, checkpoint_dir, checkpoint_prefix, device
 				try:
 					yl, xl, x_seq_len = next(it)
 					y = yl[0].to(device)
-					x = [i.to(device) for i in xl] + [x_seq_len-1]
+					x = [i.to(device) for i in xl] + [x_seq_len]
 
 					optimizer.zero_grad()
 					yp = F.softmax(model(*x), dim=1)
@@ -154,7 +154,7 @@ def train(model, task, y_list, x_list, checkpoint_dir, checkpoint_prefix, device
 				try:
 					yl, xl, x_seq_len = next(it)
 					y = yl[0].to(device)
-					x = [i.to(device) for i in xl] + [x_seq_len-1]
+					x = [i.to(device) for i in xl] + [x_seq_len]
 					yp = F.softmax(model(*x), dim=1)
 					loss = loss_fn(yp,y)
 
@@ -204,7 +204,7 @@ if __name__=='__main__':
 			resume_surfix = '{}_{}'.format(resume_epoch, resume_file-1)
 			task = [(resume_epoch, np.arange(resume_file,10))]+[(i, np.arange(1,10)) for i in range(resume_epoch+1, end_epoch+1)]
 
-	task_name = 'train_v2_age_tf_enc_crea'
+	task_name = 'train_v2_age_gnmt_multiInp'
 	checkpoint_dir = os.path.join(model_path, task_name)
 	if not os.path.isdir(checkpoint_dir): os.mkdir(checkpoint_dir)
 	checkpoint_prefix = task_name
@@ -212,7 +212,7 @@ if __name__=='__main__':
 	logger.info('Batch Size: {}, Max Sequence Length: {}, Learning Rate: {}'.format(batch_size, max_seq_len, lr))
 
 	y_list = ['age']
-	x_list = ['creative']
+	x_list = ['creative', 'ad', 'product', 'advertiser']
 
 	DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 	logger.info('Device in Use: {}'.format(DEVICE))
@@ -223,9 +223,10 @@ if __name__=='__main__':
 		a = torch.cuda.memory_allocated(DEVICE)/1024**3
 		logger.info('CUDA Memory: Total {:.2f} GB, Cached {:.2f} GB, Allocated {:.2f} GB'.format(t,c,a))
 
-	model = Transformer_Encoder_Classifier(128, 10, 4, 8, 1024, DEVICE)
+	model = Multi_Seq_GNMT_Classifier(10, [128, 128, 128, 128], [128, 128, 128, 128], 8, 8, device=DEVICE)
 
 	logger.info('Model Parameter #: {}'.format(get_torch_module_num_of_parameter(model)))
 
 	train(model, task, y_list, x_list, checkpoint_dir, checkpoint_prefix, DEVICE, 
 		batch_size=batch_size, max_seq_len=max_seq_len, lr=lr, resume_surfix=resume_surfix, logger=logger)
+	
