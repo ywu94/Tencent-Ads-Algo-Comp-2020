@@ -17,7 +17,7 @@ from torch import nn
 import torch.nn.functional as F
 
 from data_loader_v2 import data_loader_v2, wv_loader_v2
-from clf_gnmt import Multi_Seq_GNMT_Classifier
+from clf_lstm import Multi_Seq_LSTM_Classifier
 
 cwd = os.getcwd()
 train_path = os.path.join(cwd, 'train_artifact')
@@ -84,21 +84,18 @@ def train(model, task, y_list, x_list, checkpoint_dir, checkpoint_prefix, device
 		model_artifact_path = os.path.join(checkpoint_dir, '{}_{}.pth'.format(checkpoint_prefix, resume_surfix))
 		model.load_state_dict(torch.load(model_artifact_path))
 		if logger: logger.info('Model loaded from {}'.format(model_artifact_path))
+	else:
+		pretrain_file_prefix = os.path.join(checkpoint_dir, 'train_v2_gender_lstm_multiInp_pretrain_lstm_extract')
+		model.extraction_layer_0.load_state_dict(torch.load('{}_{}.pth'.format(pretrain_file_prefix, 0)))
+		model.extraction_layer_1.load_state_dict(torch.load('{}_{}.pth'.format(pretrain_file_prefix, 1)))
+		model.extraction_layer_2.load_state_dict(torch.load('{}_{}.pth'.format(pretrain_file_prefix, 2)))
+		model.extraction_layer_3.load_state_dict(torch.load('{}_{}.pth'.format(pretrain_file_prefix, 3)))
 
 	# Set up loss function and optimizer
 	model.to(device)
 	loss_fn = nn.CrossEntropyLoss()
 	optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
-
-	div, mod = divmod(90000, batch_size)
-	batch_per_file = div+min(mod, 1)
-	total_steps = batch_per_file*9*task[-1][0]
-
-	start_epoch = task[0][0]
-	start_file = task[0][1][0]
-	last_batch = (start_epoch-1)*batch_per_file*9 + (start_file-1)*batch_per_file - 1
-
-	scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=5e-3, total_steps=total_steps, last_epoch=last_batch)
+	scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.3, patience=1, verbose=True)
 
 	# Main Loop
 	for epoch, file_idx_list in task:
@@ -118,7 +115,7 @@ def train(model, task, y_list, x_list, checkpoint_dir, checkpoint_prefix, device
 				try:
 					yl, xl, x_seq_len = next(it)
 					y = yl[0].to(device)
-					x = [i.to(device) for i in xl] + [x_seq_len]
+					x = [i.to(device) for i in xl] + [x_seq_len-1]
 
 					optimizer.zero_grad()
 					yp = F.softmax(model(*x), dim=1)
@@ -131,8 +128,6 @@ def train(model, task, y_list, x_list, checkpoint_dir, checkpoint_prefix, device
 					train_running_loss += loss.item()
 					train_n_batch += 1
 
-					scheduler.step()
-  
 				except StopIteration:
 					break
 
@@ -166,7 +161,7 @@ def train(model, task, y_list, x_list, checkpoint_dir, checkpoint_prefix, device
 				try:
 					yl, xl, x_seq_len = next(it)
 					y = yl[0].to(device)
-					x = [i.to(device) for i in xl] + [x_seq_len]
+					x = [i.to(device) for i in xl] + [x_seq_len-1]
 					yp = F.softmax(model(*x), dim=1)
 					loss = loss_fn(yp,y)
 
@@ -196,6 +191,8 @@ def train(model, task, y_list, x_list, checkpoint_dir, checkpoint_prefix, device
 		if logger:
 			logger.info('Epoch {}/{} Done - Test Loss: {:.6f}, Test Accuracy: {:.6f}'.format(epoch, task[-1][0], test_running_loss/test_n_batch, acc_score))
 
+		scheduler.step(test_running_loss/test_n_batch)
+
 if __name__=='__main__':
 	assert len(sys.argv) in (5, 7)
 	end_epoch = int(sys.argv[1])
@@ -216,14 +213,14 @@ if __name__=='__main__':
 			resume_surfix = '{}_{}'.format(resume_epoch, resume_file-1)
 			task = [(resume_epoch, np.arange(resume_file,10))]+[(i, np.arange(1,10)) for i in range(resume_epoch+1, end_epoch+1)]
 
-	task_name = 'train_v2_age_gnmt_multiInp'
+	task_name = 'train_v2_gender_lstm_multiInp'
 	checkpoint_dir = os.path.join(model_path, task_name)
 	if not os.path.isdir(checkpoint_dir): os.mkdir(checkpoint_dir)
 	checkpoint_prefix = task_name
 	logger = initiate_logger(os.path.join(checkpoint_dir, '{}.log'.format(task_name)))
 	logger.info('Batch Size: {}, Max Sequence Length: {}, Learning Rate: {}'.format(batch_size, max_seq_len, lr))
 
-	y_list = ['age']
+	y_list = ['gender']
 	x_list = ['creative', 'ad', 'product', 'advertiser']
 
 	DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -235,7 +232,7 @@ if __name__=='__main__':
 		a = torch.cuda.memory_allocated(DEVICE)/1024**3
 		logger.info('CUDA Memory: Total {:.2f} GB, Cached {:.2f} GB, Allocated {:.2f} GB'.format(t,c,a))
 
-	model = Multi_Seq_GNMT_Classifier(10, [128, 128, 128, 128], [128, 128, 128, 128], 8, 8, device=DEVICE)
+	model = Multi_Seq_LSTM_Classifier([128, 128, 128, 128], [128, 128, 128, 128], 2)
 
 	logger.info('Model Parameter #: {}'.format(get_torch_module_num_of_parameter(model)))
 
