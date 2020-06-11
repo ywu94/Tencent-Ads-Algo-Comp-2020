@@ -6,7 +6,8 @@ Git repo for Tencent Advertisement Algorithm Competition
 
 * [Quick Start](#quick_start)
 * [Script Documentation](#script_documentation)
-  * [Model Training](#model_training)
+  * [Model Training V2](#model_training2)
+  * [Legacy - Model Training V1](#model_training1)
   * [Data Preparation](#data_preparation)
 * [Materials](#material)
 
@@ -20,19 +21,47 @@ cd ./Script
 . prerequisite.sh
 python3 input_generate.py
 python3 input_split.py fine
-python3 train_w2v.py creative 256
-python3 train_w2v.py ad 256
+python3 train_w2v.py creative 128
+python3 train_w2v.py ad 128
 python3 train_w2v.py advertiser 128
 python3 train_w2v.py product 128
-python3 train_age_multi_seq_lstm_classifier.py 0 10 256 100 1e-3 split
-python3 train_gender_multi_seq_lstm_classifier.py 0 10 256 100 1e-3 split
+python3 train_age_multi_seq_lstm_classifier.py 0 10 256 100 1e-3
 ```
 
 <a id='script_documentation'></a>
 ## Script Documentation
 
-<a id='model_training'></a>
-### Model Training
+<a id='model_training2'></a>
+### Model Training V2
+
+* How to run training script
+
+  Syntax: `python3 train_v2_{some script name}.py 10 512 100 1e-3`
+  > **Argument**:
+  > 1. *(Required,INT)* 0 means training from scratch and a positive number means loading the corresponding epoch and start training from there <br/>
+  > 2. *(Required,INT)* target epoch to train
+  > 3. *(Required,INT)* batch size for training
+  > 4. *(Required,INT)* maximal length of input sequence, smaller length can help train withb larger batch size
+  > 5. *(Required,FLOAT)* learning rate for adam optimizer
+  > 6. *(Optional, INT)* If nothing specified then the model will be trained from scratch, otherwise it indicates the epoch to resume training
+  > 7. *(Optional, INT)* If nothing specified then the model will be trained from scratch, otherwise it indicates the training file to resume training
+  >    Example: `9, 2` indicates resume training from epoch 9 file 2.
+  
+* Training script inventory
+  ```
+  |--Script
+    |--data_loader_v2.py
+    |
+    |--clf_lstm.py             # Model based on stacked LSTM
+    |--clf_gnmt.py             # Model based on Google Neural Translation Machine
+    |--clf_tf_enc.py           # Model based on encoder part of Transformer
+    |
+    |--train_v2_age_lstm_multiInp.py
+    |--train_v2_age_tf_enc_crea.py
+  ```
+
+<a id='model_training1'></a>
+### Legacy - Model Training V1
 
 * How to run training script
 

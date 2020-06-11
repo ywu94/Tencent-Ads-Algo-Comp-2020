@@ -10,6 +10,7 @@ import json
 import time
 import tempfile
 from gensim.models import Word2Vec
+from gensim.test.utils import common_texts, get_tmpfile
 
 cwd = os.getcwd()
 embed_path = os.path.join(cwd, 'embed_artifact')
@@ -65,6 +66,21 @@ def train(target, embed_size, logger=None):
 
 	return tmp_file_path
 
+def save_wv(target, embed_size, logger=None):
+	global embed_path, w2v_registry
+	assert target in w2v_registry
+
+	start = time.time()
+	model = Word2Vec.load(w2v_registry[target])
+	save_path = os.path.join(embed_path, '{}_sg_embed_s{}_wv_'.format(target, embed_size))
+	with tempfile.NamedTemporaryFile(prefix=save_path, delete=False) as tmp:
+		tmp_file_path = tmp.name
+		model.wv.save(tmp_file_path)
+	if logger: logger.info('{} word vector is saved to {} after {:.2f}s'.format(target.capitalize(), tmp_file_path, time.time()-start))
+
+	return tmp_file_path
+
+
 if __name__=='__main__':
 	assert len(sys.argv)==3
 	target, embed_size = sys.argv[1], int(sys.argv[2])
@@ -77,17 +93,39 @@ if __name__=='__main__':
 	else:
 		w2v_registry = {}
 
+	# Set up word vector registey
+	wv_registry_path = os.path.join(embed_path, 'wv_registry.json')
+	if os.path.isfile(wv_registry_path):
+		with open(wv_registry_path, 'r') as f:
+			wv_registry = json.load(f)
+	else:
+		wv_registry = {}
+
 	logger = initiate_logger('train_w2v.log')
 
 	# Train w2v model if there hasn't been one registered
 	if target not in w2v_registry:
 		w2v_path = train(target, embed_size, logger=logger)
 		w2v_registry[target] = w2v_path
+		wv_path = save_wv(target, embed_size, logger=logger)
+		wv_registry[target] = wv_path
 	else:
-		logger.info('{} w2v model found, skip'.format(target.capitalize()))
+		logger.info('{} w2v model found, skip training'.format(target.capitalize()))
+
+	# Save word vector if there hasn't been one registered
+	if target not in wv_registry:
+		wv_path = save_wv(target, embed_size, logger=logger)
+		wv_registry[target] = wv_path
+	else:
+		logger.info('{} word vector found, skip saving'.format(target.capitalize()))
+
 	
 	# Save w2v model registry
 	with open(registry_path, 'w') as f:
 		json.dump(w2v_registry, f)
+
+	# Save word vector registry
+	with open(wv_registry_path, 'w') as f:
+		json.dump(wv_registry, f)
 
 
