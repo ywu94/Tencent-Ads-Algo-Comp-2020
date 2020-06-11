@@ -206,6 +206,7 @@ if __name__=='__main__':
 
 	task_name = 'train_v2_age_tf_enc_crea'
 	checkpoint_dir = os.path.join(model_path, task_name)
+	if not os.path.isdir(checkpoint_dir): os.mkdir(checkpoint_dir)
 	checkpoint_prefix = task_name
 	logger = initiate_logger(os.path.join(checkpoint_dir, '{}.log'.format(task_name)))
 	logger.info('Batch Size: {}, Max Sequence Length: {}, Learning Rate: {}'.format(batch_size, max_seq_len, lr))
