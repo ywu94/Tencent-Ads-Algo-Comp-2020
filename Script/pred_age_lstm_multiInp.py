@@ -78,7 +78,7 @@ def pred(model, x_list, checkpoint_dir, checkpoint_prefix, output_dir, output_pr
 	# Main Loop
 	pred_y = []
 
-	for file_idx in np.arange(1,2):
+	for file_idx in np.arange(1,11):
 		with torch.no_grad():
 			dl = data_loader_v2(wv, [], x_list, input_split_path, file_idx, batch_size=batch_size, shuffle=False, train=False)
 			it = iter(dl)
