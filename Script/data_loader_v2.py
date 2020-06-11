@@ -50,7 +50,7 @@ class data_loader_v2(object):
 	"""
 	This data loader is tailored to handle splitted input files.
 	"""
-	def __init__(self, wv, y_list, x_list, input_split_path, split_idx, batch_size=512, shuffle=True, logger=None):
+	def __init__(self, wv, y_list, x_list, input_split_path, split_idx, batch_size=512, shuffle=True, train=True, logger=None):
 		"""
 		: wv - wv_loader_v2: host of word vector
 		: y_list - list[str]: list of y variables
@@ -58,6 +58,7 @@ class data_loader_v2(object):
 		: input_split_path: path to directory that stores splitted input files
 		: batch_size - int: batch size for yielding data
 		: shuffle - bool: whether to shuffle data before yielding
+		: train - bool: whether to load train / test data
 		"""
 		self.wv = wv
 		self.y_list = y_list
@@ -72,13 +73,14 @@ class data_loader_v2(object):
 		for y in y_list:
 			setattr(self, 'y_{}_prefix'.format(y), os.path.join(input_split_path,'train_{}'.format(y)))
 		for x in x_list:
-			setattr(self, 'x_{}_prefix'.format(x), os.path.join(input_split_path,'train_{}_id_seq'.format(x)))
+			if train:
+				setattr(self, 'x_{}_prefix'.format(x), os.path.join(input_split_path,'train_{}_id_seq'.format(x)))
+			else:
+				setattr(self, 'x_{}_prefix'.format(x), os.path.join(input_split_path,'test_{}_id_seq'.format(x)))
 
 		self.y_data_list = self._load_y()
 		self.x_data_list = self._load_x()
 		self.x_seq_len = np.array([x.shape[0] for x in self.x_data_list[0]])
-
-		assert self.y_data_list[0].shape[0] == self.x_seq_len.shape[0]
 
 		self.len = self.x_seq_len.shape[0]
 		div, mod = divmod(self.len, self.batch_size)
