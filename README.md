@@ -45,7 +45,7 @@ python3 train_age_multi_seq_lstm_classifier.py 0 10 256 100 1e-3
   > 5. *(Required,FLOAT)* learning rate for adam optimizer
   > 6. *(Optional, INT)* If nothing specified then the model will be trained from scratch, otherwise it indicates the epoch to resume training
   > 7. *(Optional, INT)* If nothing specified then the model will be trained from scratch, otherwise it indicates the training file to resume training
-  >    Example: `9, 2` indicates resume training from epoch 9 file 2.
+  >    * Example: `9, 2` indicates resume training from epoch 9 file 2.
   
 * Training script inventory
   ```
