@@ -25,7 +25,7 @@ python3 train_w2v.py creative 128
 python3 train_w2v.py ad 128
 python3 train_w2v.py advertiser 128
 python3 train_w2v.py product 128
-python3 train_age_multi_seq_lstm_classifier.py 0 10 256 100 1e-3
+python3 train_v2_age_lstm_multiInp.py 10 512 100 1e-3
 ```
 
 <a id='script_documentation'></a>
