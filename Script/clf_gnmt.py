@@ -241,3 +241,41 @@ class GNMT_Classifier(nn.Module):
 		out = torch.cat((torch.stack(max_pool_buf, dim=0), torch.stack(last_buf, dim=0)), dim=1)   # (batch_size, hidden_size*2)
 		out = self.mlp_layer(out)                                                                  # (batch_size, out_size)
 		return out
+
+class Multi_Seq_GNMT_Classifier(nn.Module):
+	"""
+	Use GNMT for Seq2Seq feature extraction, apply max pooling & pick last state, then use multilayer perception for classification
+	- Multi sequence input version
+	"""
+	def __init__(self, out_size, embed_size, hidden_size, n_enc_layer, n_dec_layer, device=None, rnn_dropout=0.1, dnn_dropout=0.4, **kwargs):
+		super(Multi_Seq_GNMT_Classifier, self).__init__()
+		assert isinstance(embed_size, list) and isinstance(hidden_size, list) and len(embed_size)==len(hidden_size)
+		self.out_size = out_size
+		self.embed_size = embed_size
+		self.hidden_size = hidden_size
+		self.n_enc_layer = n_enc_layer
+		self.n_dec_layer = n_dec_layer
+		self.device = device if device else torch.device('cpu')
+		self.rnn_dropout = rnn_dropout
+		self.dnn_dropout = dnn_dropout
+
+		self.n_extraction = len(embed_size)
+		self.mlp_inp_size = sum(map(lambda x:2*x, hidden_size))
+
+		for index, (e_size, h_size) in enumerate(zip(embed_size, hidden_size)):
+			setattr(self, 'GNMT_layer_{}'.format(index), GNMT_Extraction_Layer(e_size, h_size, n_enc_layer, n_dec_layer, device=device, dropout=rnn_dropout))
+		self.mlp_layer = MLP_Classification_Layer(self.mlp_inp_size, out_size, dropout=dnn_dropout)
+
+	def forward(self, *args):
+		assert len(args)==self.n_extraction+1
+		out_buf, inp_len = [], args[-1]
+		for index, inp in enumerate(args[:-1]):
+			inp = getattr(self, 'GNMT_layer_{}'.format(index))(inp, inp_len)  
+			max_pool_buf, last_buf = [], []
+			for batch_idx, l in enumerate(inp_len):
+				max_pool_buf.append(torch.max(inp[batch_idx,:l], dim=0)[0])
+				last_buf.append(inp[batch_idx, l-1])
+			out_buf.append(torch.cat((torch.stack(max_pool_buf, dim=0), torch.stack(last_buf, dim=0)), dim=1)) 
+		out = torch.cat(out_buf, dim=1)
+		out = self.mlp_layer(out)                                                     
+		return out
