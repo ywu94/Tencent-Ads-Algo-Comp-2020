@@ -17,7 +17,7 @@ from torch import nn
 import torch.nn.functional as F
 
 from data_loader_v2 import data_loader_v2, wv_loader_v2
-from clf_lstm import Multi_Seq_LSTM_Attn_Conv_Classifier
+from clf_tf_enc import Multi_Seq_Transformer_Encoder_Classifier
 
 cwd = os.getcwd()
 train_path = os.path.join(cwd, 'train_artifact')
@@ -88,8 +88,8 @@ def train(model, task, y_list, x_list, checkpoint_dir, checkpoint_prefix, device
 	# Set up loss function and optimizer
 	model.to(device)
 	loss_fn = nn.CrossEntropyLoss()
-	optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
-	scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.5, patience=0, threshold=1e-5, threshold_mode='abs')
+	optimizer = torch.optim.Adam(model.parameters(), lr=lr, amsgrad=True)
+	scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=0, threshold=1e-5, threshold_mode='abs')
 
 	# Main Loop
 	for epoch, file_idx_list in task:
@@ -100,7 +100,7 @@ def train(model, task, y_list, x_list, checkpoint_dir, checkpoint_prefix, device
 
 		# Train model
 		model.train()
-		train_age_loss, train_gender_loss, train_n_batch = 0, 0, 0
+		train_running_loss, train_n_batch = 0, 0
 
 		for split_idx in file_idx_list:
 			dl = data_loader_v2(wv, y_list, x_list, input_split_path, split_idx, batch_size=batch_size, shuffle=True)
@@ -108,22 +108,18 @@ def train(model, task, y_list, x_list, checkpoint_dir, checkpoint_prefix, device
 			while True:
 				try:
 					yl, xl, x_seq_len = next(it)
-					y_age = yl[0].to(device)
-					y_gender = yl[1].to(device)
-					x = [i.to(device) for i in xl] + [x_seq_len]
+					y = yl[0].to(device)
+					x = [i.to(device) for i in xl] + [x_seq_len-1]
 
 					optimizer.zero_grad()
 					yp = F.softmax(model(*x), dim=1)
-					l_age = loss_fn(yp[0],y_age)
-					l_gender = loss_fn(yp[1], y_gender)
-					loss = l_age + l_gender
+					loss = loss_fn(yp,y)
 
 					loss.backward()
 					torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=100)
 					optimizer.step()
 
-					train_age_loss += l_age.item()
-					train_gender_loss += l_gender.item()
+					train_running_loss += loss.item()
 					train_n_batch += 1
 
 				except StopIteration:
@@ -137,7 +133,7 @@ def train(model, task, y_list, x_list, checkpoint_dir, checkpoint_prefix, device
 			_ = gc.collect()
 
 			if logger:
-				logger.info('Epoch {}/{} - File {}/9 Done - Train Loss - Age: {:.6f}, Gender: {:.6f}'.format(epoch, task[-1][0], split_idx, train_age_loss/train_n_batch, train_gender_loss/train_n_batch))
+				logger.info('Epoch {}/{} - File {}/9 Done - Train Loss: {:.6f}'.format(epoch, task[-1][0], split_idx, train_running_loss/train_n_batch))
 
 			# Save model state dict
 			ck_file_name = '{}_{}_{}.pth'.format(checkpoint_prefix, epoch, split_idx)
@@ -149,8 +145,8 @@ def train(model, task, y_list, x_list, checkpoint_dir, checkpoint_prefix, device
 
 		# Evaluate model
 		model.eval()
-		test_age_loss, test_gender_loss, test_n_batch = 0, 0, 0
-		true_age, pred_age, true_gender, pred_gender = [], [], [], []
+		test_running_loss, test_n_batch = 0, 0
+		true_y, pred_y = [], []
 
 		with torch.no_grad():
 			dl = data_loader_v2(wv, y_list, x_list, input_split_path, 10, batch_size=batch_size, shuffle=True)
@@ -158,21 +154,15 @@ def train(model, task, y_list, x_list, checkpoint_dir, checkpoint_prefix, device
 			while True:
 				try:
 					yl, xl, x_seq_len = next(it)
-					y_age = yl[0].to(device)
-					y_gender = yl[1].to(device)
+					y = yl[0].to(device)
 					x = [i.to(device) for i in xl] + [x_seq_len-1]
 					yp = F.softmax(model(*x), dim=1)
-					l_age = loss_fn(yp[0],y_age)
-					l_gender = loss_fn(yp[1], y_gender)
-					loss = l_age + l_gender
+					loss = loss_fn(yp,y)
 
-					pred_age.extend(list(yp[0].cpu().detach().numpy()))
-					true_age.extend(list(y_age.cpu().detach().numpy()))
-					pred_gender.extend(list(yp[1].cpu().detach().numpy()))
-					true_gender.extend(list(y_gender.cpu().detach().numpy()))
+					pred_y.extend(list(yp.cpu().detach().numpy()))
+					true_y.extend(list(y.cpu().detach().numpy()))
 
-					test_age_loss += l_age.item()
-					test_gender_loss += l_gender.item()
+					test_running_loss += loss.item()
 					test_n_batch += 1
 
 				except StopIteration:
@@ -185,22 +175,17 @@ def train(model, task, y_list, x_list, checkpoint_dir, checkpoint_prefix, device
 			del dl, it
 			_ = gc.collect()
 
-		pred_age = np.argmax(np.array(pred_age), 1)
-		true_age = np.array(true_age).reshape((-1,))
-		acc_age = accuracy_score(true_age, pred_age)
+		pred = np.argmax(np.array(pred_y), 1)
+		true = np.array(true_y).reshape((-1,))
+		acc_score = accuracy_score(true, pred)
 
-		pred_gender = np.argmax(np.array(pred_gender), 1)
-		true_gender = np.array(true_gender).reshape((-1,))
-		acc_gender = accuracy_score(true_gender, pred_gender)
-
-		del pred_age, true_age, pred_gender, true_gender
+		del pred, true, pred_y, true_y
 		_ = gc.collect()
 
 		if logger:
-			logger.info('Epoch {}/{} Done - Age Loss: {:.6f}, Age Accuracy: {:.6f}'.format(epoch, task[-1][0], test_age_loss/test_n_batch, acc_age))
-			logger.info('Epoch {}/{} Done - Gender Loss: {:.6f}, Gender Accuracy: {:.6f}'.format(epoch, task[-1][0], test_gender_loss/test_n_batch, acc_gender))
+			logger.info('Epoch {}/{} Done - Test Loss: {:.6f}, Test Accuracy: {:.6f}'.format(epoch, task[-1][0], test_running_loss/test_n_batch, acc_score))
 
-		scheduler.step(acc_gender+acc_age)
+		scheduler.step(test_running_loss/test_n_batch)
 		if logger:
 			logger.info('Epoch {}/{} - Updated Learning Rate: {:.8f}'.format(epoch, task[-1][0], optimizer.param_groups[0]['lr']))
 
@@ -224,15 +209,15 @@ if __name__=='__main__':
 			resume_surfix = '{}_{}'.format(resume_epoch, resume_file-1)
 			task = [(resume_epoch, np.arange(resume_file,10))]+[(i, np.arange(1,10)) for i in range(resume_epoch+1, end_epoch+1)]
 
-	task_name = 'train_v2_multiTar_lstm_attn_conv_multiInp'
+	task_name = 'train_v2_age_tf_enc_multiInp'
 	checkpoint_dir = os.path.join(model_path, task_name)
 	if not os.path.isdir(checkpoint_dir): os.mkdir(checkpoint_dir)
 	checkpoint_prefix = task_name
 	logger = initiate_logger(os.path.join(checkpoint_dir, '{}.log'.format(task_name)))
 	logger.info('Batch Size: {}, Max Sequence Length: {}, Learning Rate: {}'.format(batch_size, max_seq_len, lr))
 
-	y_list = ['age', 'gender']
-	x_list = ['creative']
+	y_list = ['age']
+	x_list = ['creative', 'ad', 'product', 'advertiser']
 
 	DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 	logger.info('Device in Use: {}'.format(DEVICE))
@@ -243,10 +228,12 @@ if __name__=='__main__':
 		a = torch.cuda.memory_allocated(DEVICE)/1024**3
 		logger.info('CUDA Memory: Total {:.2f} GB, Cached {:.2f} GB, Allocated {:.2f} GB'.format(t,c,a))
 
-	model = Multi_Seq_LSTM_Attn_Conv_Classifier([128], [256], [10, 2], seq_len=max_seq_len, device=DEVICE)
+	model = Multi_Seq_Transformer_Encoder_Classifier([128, 128, 128, 128], 10, 1, 4, 2048, device=DEVICE, max_seq_len=max_seq_len)
 
 	logger.info('Model Parameter #: {}'.format(get_torch_module_num_of_parameter(model)))
 
 	train(model, task, y_list, x_list, checkpoint_dir, checkpoint_prefix, DEVICE, 
 		batch_size=batch_size, max_seq_len=max_seq_len, lr=lr, resume_surfix=resume_surfix, logger=logger)
 	
+
+
