@@ -118,13 +118,13 @@ if __name__=='__main__':
 	max_seq_len = int(sys.argv[2])
 	load_surfix = sys.argv[3]
 
-	task_name = 'train_v2_age_lstm_multiInp'
+	task_name = 'train_v2_gender_lstm_multiInp'
 
 	checkpoint_dir = os.path.join(model_path, task_name)
 	if not os.path.isdir(checkpoint_dir): os.mkdir(checkpoint_dir)
 	checkpoint_prefix = task_name
 
-	pred_task_name = 'pred_age_lstm_multiInp'
+	pred_task_name = 'pred_gender_lstm_multiInp'
 
 	output_dir = os.path.join(output_path, pred_task_name)
 	if not os.path.isdir(output_dir): os.mkdir(output_dir)
@@ -143,7 +143,7 @@ if __name__=='__main__':
 		a = torch.cuda.memory_allocated(DEVICE)/1024**3
 		logger.info('CUDA Memory: Total {:.2f} GB, Cached {:.2f} GB, Allocated {:.2f} GB'.format(t,c,a))
 
-	model = Multi_Seq_LSTM_Classifier([128, 128, 128, 128], [128, 128, 128, 128], 10)
+	model = Multi_Seq_LSTM_Classifier([128, 128, 128, 128], [128, 128, 128, 128], 2)
 
 	pred(model, x_list, checkpoint_dir, checkpoint_prefix, output_dir, output_prefix, DEVICE, load_surfix, 
 		batch_size=batch_size, max_seq_len=max_seq_len, logger=logger)
