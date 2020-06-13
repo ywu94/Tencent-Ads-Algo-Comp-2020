@@ -43,6 +43,7 @@ class Local_Inference_Layer(nn.Module):
 class Inference_Composition_Layer(nn.Module):
 	"""
 	Inference composition layer of ESIM
+	- Note that here we don't implement the padding handling for efficiency as only the max pooling will be used later.
 	"""
 	def __init__(self, input_size, hidden_size, max_seq_len=100, **kwargs):
 		super(Inference_Composition_Layer, self).__init__(**kwargs)
@@ -51,16 +52,13 @@ class Inference_Composition_Layer(nn.Module):
 		self.max_seq_len = max_seq_len
 
 		self.bi_lstm_layer = nn.LSTM(input_size, hidden_size, bidirectional=True)
+		self.max_pooling_layer = nn.MaxPool1d(max_seq_len)
+		self.avg_pooling_layer = nn.AvgPool1d(max_seq_len)
 
-	def forward(self, inp, inp_len):
+	def forward(self, inp):
 		out, _ = self.bi_lstm_layer(inp.permute(1,0,2))                                 # (seq_len, batch_size, 2*hidden_size)
-		out = out.permute(1,0,2)                                                        # (batch_size, seq_len, 2*hidden_size)
-		max_buf, avg_buf = [], []
-		for index, l in enumerate(inp_len):
-			max_buf.append(torch.max(out[index,:l,:].permute(1,0), dim=1)[0])
-			avg_buf.append(torch.mean(out[index,:l,:].permute(1,0), dim=1))
-		max_out = torch.stack(max_buf, dim=0)                                            # (batch_size, 2*hidden_size)
-		avg_out = torch.stack(avg_buf, dim=0)                                            # (batch_size, 2*hidden_size)
+		max_out = self.max_pooling_layer(out.permute(1,2,0)).squeeze(2)                 # (batch_size, 2*hidden_size)
+		avg_out = self.avg_pooling_layer(out.permute(1,2,0)).squeeze(2)                 # (batch_size, 2*hidden_size)
 		return max_out, avg_out
 
 class MLP_Classification_Layer(nn.Module):
@@ -95,6 +93,7 @@ class MLP_Classification_Layer(nn.Module):
 class ESIM_Classifier(nn.Module):
 	"""
 	Enhanced Sequential Inference Model for Classification
+	- Note that avg pooling layer is dropped for performance reasons.
 	"""
 	def __init__(self, out_size, prem_embed_size, hypo_embed_size, hidden_size, device=None, max_seq_len=100, rnn_dropout=0.2, dnn_dropout=0.5, **kwargs):
 		super(ESIM_Classifier, self).__init__(**kwargs)
@@ -113,17 +112,17 @@ class ESIM_Classifier(nn.Module):
 		self.prem_inference = Inference_Composition_Layer(8*hidden_size, hidden_size, max_seq_len=max_seq_len)
 		self.hypo_inference = Inference_Composition_Layer(8*hidden_size, hidden_size, max_seq_len=max_seq_len)
 		self.inp_dropout = nn.Dropout(p=dnn_dropout)
-		self.mlp_layer = MLP_Classification_Layer(8*hidden_size, out_size, dropout=dnn_dropout)
+		self.mlp_layer = MLP_Classification_Layer(4*hidden_size, out_size, dropout=dnn_dropout)
 
 
-	def forward(self, inp_prem, inp_hypo, inp_len):
+	def forward(self, inp_prem, inp_hypo):
 		inp_prem = self.prem_encoder(inp_prem.permute(1,0,2))                          # (seq_len_p, batch_size, 2*hidden_size)
 		inp_prem = inp_prem.permute(1,0,2)                                             # (batch_size, seq_len_p, 2*hidden_size)
 		inp_hypo = self.hypo_encoder(inp_hypo.permute(1,0,2))                          # (seq_len_h, batch_size, 2*hidden_size)
 		inp_hypo = inp_hypo.permute(1,0,2)                                             # (batch_size, seq_len_h, 2*hidden_size)
 		inf_prem, inf_hypo = self.local_inference(inp_prem, inp_hypo)                  # (batch_size, seq_len_p/h, 8*hidden_size)
-		prem_max, prem_avg = self.prem_inference(inf_prem, inp_len)                    # (batch_size, 2*hidden_size)
-		hypo_max, hypo_avg = self.hypo_inference(inf_hypo, inp_len)                    # (batch_size, 2*hidden_size)
-		out = torch.cat((prem_max, prem_avg, hypo_max, hypo_avg), dim=1)               # (batch_size, 8*hidden_size)
+		prem_max, prem_avg = self.prem_inference(inf_prem)                             # (batch_size, 2*hidden_size)
+		hypo_max, hypo_avg = self.hypo_inference(inf_hypo)                             # (batch_size, 2*hidden_size)
+		out = torch.cat((prem_max, hypo_max), dim=1)                                   # (batch_size, 4*hidden_size)
 		out = self.mlp_layer(self.inp_dropout(F.relu(out)))                            # (batch_size, out_size)
 		return out                                            

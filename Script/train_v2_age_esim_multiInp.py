@@ -113,7 +113,7 @@ def train(model, task, y_list, x_list, checkpoint_dir, checkpoint_prefix, device
 					x2 = torch.cat((xl[2], xl[3]), dim=2).to(device)
 
 					optimizer.zero_grad()
-					yp = F.softmax(model(x1, x2, inp_len), dim=1)
+					yp = F.softmax(model(x1, x2), dim=1)
 					loss = loss_fn(yp,y)
 
 					loss.backward()
@@ -158,7 +158,7 @@ def train(model, task, y_list, x_list, checkpoint_dir, checkpoint_prefix, device
 					y = yl[0].to(device)
 					x1 = torch.cat((xl[0], xl[1]), dim=2).to(device)
 					x2 = torch.cat((xl[2], xl[3]), dim=2).to(device)
-					yp = F.softmax(model(x1, x2, inp_len), dim=1)
+					yp = F.softmax(model(x1, x2), dim=1)
 					loss = loss_fn(yp,y)
 
 					pred_y.extend(list(yp.cpu().detach().numpy()))
