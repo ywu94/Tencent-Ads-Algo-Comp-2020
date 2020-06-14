@@ -17,7 +17,7 @@ from torch import nn
 import torch.nn.functional as F
 
 from data_loader_v2 import data_loader_v2, wv_loader_v2
-from clf_lstm import Multi_Seq_LSTM_Classifier
+from clf_lstm import Multi_Seq_LSTM_V2_Classifier
 
 cwd = os.getcwd()
 train_path = os.path.join(cwd, 'train_artifact')
@@ -84,18 +84,12 @@ def train(model, task, y_list, x_list, checkpoint_dir, checkpoint_prefix, device
 		model_artifact_path = os.path.join(checkpoint_dir, '{}_{}.pth'.format(checkpoint_prefix, resume_surfix))
 		model.load_state_dict(torch.load(model_artifact_path))
 		if logger: logger.info('Model loaded from {}'.format(model_artifact_path))
-	else:
-		pretrain_file_prefix = os.path.join(checkpoint_dir, 'train_v2_gender_lstm_multiInp_pretrain_lstm_extract')
-		model.extraction_layer_0.load_state_dict(torch.load('{}_{}.pth'.format(pretrain_file_prefix, 0)))
-		model.extraction_layer_1.load_state_dict(torch.load('{}_{}.pth'.format(pretrain_file_prefix, 1)))
-		model.extraction_layer_2.load_state_dict(torch.load('{}_{}.pth'.format(pretrain_file_prefix, 2)))
-		model.extraction_layer_3.load_state_dict(torch.load('{}_{}.pth'.format(pretrain_file_prefix, 3)))
 
 	# Set up loss function and optimizer
 	model.to(device)
 	loss_fn = nn.CrossEntropyLoss()
-	optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-	scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=0, threshold=1e-5, threshold_mode='abs')
+	optimizer = torch.optim.Adam(model.parameters(), lr=lr, amsgrad=True)
+	scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=1, threshold=1e-5, threshold_mode='abs')
 
 	# Main Loop
 	for epoch, file_idx_list in task:
@@ -215,14 +209,14 @@ if __name__=='__main__':
 			resume_surfix = '{}_{}'.format(resume_epoch, resume_file-1)
 			task = [(resume_epoch, np.arange(resume_file,10))]+[(i, np.arange(1,10)) for i in range(resume_epoch+1, end_epoch+1)]
 
-	task_name = 'train_v2_gender_lstm_multiInp'
+	task_name = 'train_v2_age_lstm_v2_multiInp'
 	checkpoint_dir = os.path.join(model_path, task_name)
 	if not os.path.isdir(checkpoint_dir): os.mkdir(checkpoint_dir)
 	checkpoint_prefix = task_name
 	logger = initiate_logger(os.path.join(checkpoint_dir, '{}.log'.format(task_name)))
 	logger.info('Batch Size: {}, Max Sequence Length: {}, Learning Rate: {}'.format(batch_size, max_seq_len, lr))
 
-	y_list = ['gender']
+	y_list = ['age']
 	x_list = ['creative', 'ad', 'product', 'advertiser']
 
 	DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -234,7 +228,7 @@ if __name__=='__main__':
 		a = torch.cuda.memory_allocated(DEVICE)/1024**3
 		logger.info('CUDA Memory: Total {:.2f} GB, Cached {:.2f} GB, Allocated {:.2f} GB'.format(t,c,a))
 
-	model = Multi_Seq_LSTM_Classifier([128, 128, 128, 128], [128, 128, 128, 128], 2)
+	model = Multi_Seq_LSTM_V2_Classifier([128, 128, 128, 128], [128, 128, 128, 128], 10, max_seq_len=max_seq_len)
 
 	logger.info('Model Parameter #: {}'.format(get_torch_module_num_of_parameter(model)))
 
