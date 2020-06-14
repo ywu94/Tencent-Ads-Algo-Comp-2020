@@ -107,7 +107,7 @@ class LSTM_Extraction_V2_Layer(nn.Module):
 	- V2: Add max pooling for feature extraction
 	"""
 	def __init__(self, embed_size, lstm_hidden_size, max_seq_len=100, rnn_dropout=0.2, mlp_dropout=0.4, **kwargs):
-		super(LSTM_Extraction_Layer, self).__init__(**kwargs)
+		super(LSTM_Extraction_V2_Layer, self).__init__(**kwargs)
 		self.embed_size = embed_size
 		self.lstm_hidden_size = lstm_hidden_size
 		self.max_seq_len = max_seq_len
@@ -121,7 +121,7 @@ class LSTM_Extraction_V2_Layer(nn.Module):
 		self.rnn_dropout_2 = nn.Dropout(p=rnn_dropout)
 		self.layernorm_2 = nn.LayerNorm(2*lstm_hidden_size)
 		self.lstm_2 = nn.LSTM(input_size=2*lstm_hidden_size, hidden_size=2*lstm_hidden_size)
-		self.batchnorm = nn.BatchNorm1d(2*lstm_hidden_size)
+		self.batchnorm = nn.BatchNorm1d(4*lstm_hidden_size)
 		self.mlp_dropout = nn.Dropout(p=mlp_dropout)
 		self.max_pooling = nn.MaxPool1d(max_seq_len)
 		
@@ -134,7 +134,7 @@ class LSTM_Extraction_V2_Layer(nn.Module):
 		lstm_out, _ = self.lstm_2(lstm_out)                                               # (max_seq_length, batch_size, 2*lstm_hidden_size)
 		out_1 = lstm_out.permute(1,0,2)[np.arange(len(inp_last_idx)), inp_last_idx,:]     # (batch_size, 2*lstm_hidden_size)
 		out_2 = self.max_pooling(lstm_out.permute(1,2,0)).squeeze(2)                      # (batch_size, 2*lstm_hidden_size)
-		out = self.mlp_dropout(F.relu(self.batchnorm(torch.cat(out_1, out_2), dim=1)))    # (batch_size, 4*lstm_hidden_size)
+		out = self.mlp_dropout(F.relu(self.batchnorm(torch.cat((out_1, out_2), dim=1))))  # (batch_size, 4*lstm_hidden_size)
 		return out
 
 class MLP_Classification_V2_Layer(nn.Module):
@@ -145,7 +145,7 @@ class MLP_Classification_V2_Layer(nn.Module):
 	- Layer 3: Linear
 	"""
 	def __init__(self, inp_size, out_size, dropout=0.5, **kwargs):
-		super(MLP_Classification_Layer, self).__init__(**kwargs)
+		super(MLP_Classification_V2_Layer, self).__init__(**kwargs)
 		self.inp_size = inp_size
 		self.out_size = out_size
 		self.dropout = dropout
@@ -172,7 +172,7 @@ class Multi_Seq_LSTM_V2_Classifier(nn.Module):
 	- V2: Add max pooling for feature extraction
 	"""
 	def __init__(self, embed_size, lstm_hidden_size, out_size, max_seq_len=100, rnn_dropout=0.2, mlp_dropout=0.5, **kwargs):
-		super(Multi_Seq_LSTM_Classifier, self).__init__(**kwargs)
+		super(Multi_Seq_LSTM_V2_Classifier, self).__init__(**kwargs)
 		assert isinstance(embed_size, list) and isinstance(lstm_hidden_size, list) and len(embed_size)==len(lstm_hidden_size)
 		
 		self.embed_size = embed_size
