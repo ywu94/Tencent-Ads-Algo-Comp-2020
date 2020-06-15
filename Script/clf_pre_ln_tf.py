@@ -121,6 +121,7 @@ class Multi_Seq_Pre_LN_Transformer_Encoder_Classifier(nn.Module):
 		self.max_pooling = nn.MaxPool1d(max_seq_len)
 
 		self.inp_bn = nn.BatchNorm1d(self.mlp_inp_size)
+		self.inp_dropout = nn.Dropout(p=dnn_dropout)
 		self.mlp_layer = MLP_Classification_Layer(self.mlp_inp_size, out_size, dropout=dnn_dropout)
 
 	def forward(self, *args):
@@ -133,7 +134,7 @@ class Multi_Seq_Pre_LN_Transformer_Encoder_Classifier(nn.Module):
 			buf.append(inp[np.arange(len(inp_len)), inp_len-1, :])                                  # (batch_size, 2*hidden_size)
 			buf.append(self.max_pooling(inp.permute(0,2,1)).squeeze(2))                             # (batch_size, 2*hidden_size)
 		out = self.inp_bn(torch.cat(buf, dim=1))                                                    # (batch_size, Σ4*hidden_size)
-		out = self.mlp_layer(out)                                                                   # (batch_size, out_size)
+		out = self.mlp_layer(self.inp_dropout(F.relu(out)))                                         # (batch_size, out_size)
 		return out
 
 

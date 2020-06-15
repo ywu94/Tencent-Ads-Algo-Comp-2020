@@ -89,7 +89,7 @@ def train(model, task, y_list, x_list, checkpoint_dir, checkpoint_prefix, device
 	model.to(device)
 	loss_fn = nn.CrossEntropyLoss()
 	optimizer = torch.optim.Adam(model.parameters(), lr=lr, amsgrad=True)
-	scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=1, threshold=1e-5, threshold_mode='abs')
+	scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=0, threshold=1e-5, threshold_mode='abs')
 
 	# Main Loop
 	for epoch, file_idx_list in task:
