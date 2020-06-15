@@ -1,3 +1,8 @@
+import numpy as np
+
+import torch
+from torch import nn
+import torch.nn.functional as F
 
 # ========================== #
 #      Final Model - 1       #
@@ -76,4 +81,3 @@ class Final_LSTM(nn.Module):
 		out = self.dropout_layer(F.relu(self.bn_layer(torch.cat((out1, out2), dim=1))))
 		out = self.output_layer(out)
 		return out
-

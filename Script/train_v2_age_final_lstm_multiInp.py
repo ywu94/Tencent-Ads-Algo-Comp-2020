@@ -209,7 +209,7 @@ if __name__=='__main__':
 			resume_surfix = '{}_{}'.format(resume_epoch, resume_file-1)
 			task = [(resume_epoch, np.arange(resume_file,10))]+[(i, np.arange(1,10)) for i in range(resume_epoch+1, end_epoch+1)]
 
-	task_name = 'train_v2_age_lstm_v2_multiInp'
+	task_name = 'train_v2_age_final_lstm_multiInp'
 	checkpoint_dir = os.path.join(model_path, task_name)
 	if not os.path.isdir(checkpoint_dir): os.mkdir(checkpoint_dir)
 	checkpoint_prefix = task_name
@@ -228,7 +228,7 @@ if __name__=='__main__':
 		a = torch.cuda.memory_allocated(DEVICE)/1024**3
 		logger.info('CUDA Memory: Total {:.2f} GB, Cached {:.2f} GB, Allocated {:.2f} GB'.format(t,c,a))
 
-	model = Final_LSTM(2, 640, 640, max_seq_len=max_seq_len)
+	model = Final_LSTM(10, 640, 512, max_seq_len=max_seq_len)
 
 	logger.info('Model Parameter #: {}'.format(get_torch_module_num_of_parameter(model)))
 
