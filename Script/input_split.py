@@ -71,7 +71,8 @@ def fine_split(logger=None):
 			with open(os.path.join(input_split_path, '{}_{}.npy'.format(npy_path.split('.')[0], i+1)), 'wb') as f:
 				np.save(f, npy[i*90000:(i+1)*90000])
 		if logger: logger.info('{} splitted'.format(npy_path))
-	for pkl_path in ['train_creative_id_seq.pkl', 'train_ad_id_seq.pkl', 'train_advertiser_id_seq.pkl', 'train_product_id_seq.pkl',]:
+	for pkl_path in ['train_creative_id_seq.pkl', 'train_ad_id_seq.pkl', 'train_advertiser_id_seq.pkl', 
+					 'train_product_id_seq.pkl', 'train_industry_id_seq.pkl', 'train_product_category_id_seq.pkl']:
 		with open(os.path.join(input_path, pkl_path), 'rb') as f:
 			pkl = pickle.load(f)
 		for i in range(10):
@@ -86,7 +87,8 @@ def fine_split(logger=None):
 			with open(os.path.join(input_split_path, '{}_{}.npy'.format(npy_path.split('.')[0], i+1)), 'wb') as f:
 				np.save(f, npy[i*100000:(i+1)*100000])
 		if logger: logger.info('{} splitted'.format(npy_path))
-	for pkl_path in ['test_creative_id_seq.pkl', 'test_ad_id_seq.pkl', 'test_advertiser_id_seq.pkl', 'test_product_id_seq.pkl',]:
+	for pkl_path in ['test_creative_id_seq.pkl', 'test_ad_id_seq.pkl', 'test_advertiser_id_seq.pkl', 
+					 'test_product_id_seq.pkl', 'test_industry_id_seq.pkl', 'test_product_category_id_seq.pkl']:
 		with open(os.path.join(input_path, pkl_path), 'rb') as f:
 			pkl = pickle.load(f)
 		for i in range(10):
