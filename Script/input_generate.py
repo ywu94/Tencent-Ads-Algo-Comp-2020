@@ -287,6 +287,100 @@ def generate(logger=None):
 		del join, merge, dic, dic_dedup, train_seq, test_seq, seq_dedup
 		_ = gc.collect()
 
+	# Prepare Industry Sequence Data
+	if not os.path.isfile(os.path.join(input_path, 'train_industry_id_seq.pkl')):
+		join = ad[['creative_id', 'industry']].drop_duplicates()
+		merge = pd.merge(cl, join, on='creative_id')
+		merge.sort_values(['user_id', 'time'], inplace=True)
+		assert merge.shape[0]==cl.shape[0]
+
+		dic = {}
+		dic_dedup = {}
+
+		for user, i in tqdm.tqdm(merge[['user_id', 'industry']].values, desc='industry id'):
+			i = str(i)
+			if user in dic:
+				dic[user].append(i)
+				if i not in dic_dedup[user]:
+					dic_dedup[user].append(i)
+			else:
+				dic[user] = [i]
+				dic_dedup[user] = [i]
+
+		train_seq = []
+		test_seq = []
+		seq_dedup = []
+
+		for user in train_idx:
+			train_seq.append(dic[user])
+			seq_dedup.append(dic_dedup[user])
+
+		for user in test_idx:
+			test_seq.append(dic[user])
+			seq_dedup.append(dic_dedup[user])
+
+		save_path = os.path.join(input_path, 'train_industry_id_seq.pkl')
+		with open(save_path, 'wb') as f:
+			pickle.dump(train_seq, f)
+
+		save_path = os.path.join(input_path, 'test_industry_id_seq.pkl')
+		with open(save_path, 'wb') as f:
+			pickle.dump(test_seq, f)
+
+		save_path = os.path.join(embed_path, 'embed_train_industry_id_seq.pkl')
+		with open(save_path, 'wb') as f:
+			pickle.dump(seq_dedup, f)
+
+		del join, merge, dic, dic_dedup, train_seq, test_seq, seq_dedup
+		_ = gc.collect()
+
+	# Prepare Product Category Sequence Data
+	if not os.path.isfile(os.path.join(input_path, 'train_product_category_id_seq.pkl')):
+		join = ad[['creative_id', 'product_category']].drop_duplicates()
+		merge = pd.merge(cl, join, on='creative_id')
+		merge.sort_values(['user_id', 'time'], inplace=True)
+		assert merge.shape[0]==cl.shape[0]
+
+		dic = {}
+		dic_dedup = {}
+
+		for user, i in tqdm.tqdm(merge[['user_id', 'product_category']].values, desc='product category id'):
+			i = str(i)
+			if user in dic:
+				dic[user].append(i)
+				if i not in dic_dedup[user]:
+					dic_dedup[user].append(i)
+			else:
+				dic[user] = [i]
+				dic_dedup[user] = [i]
+
+		train_seq = []
+		test_seq = []
+		seq_dedup = []
+
+		for user in train_idx:
+			train_seq.append(dic[user])
+			seq_dedup.append(dic_dedup[user])
+
+		for user in test_idx:
+			test_seq.append(dic[user])
+			seq_dedup.append(dic_dedup[user])
+
+		save_path = os.path.join(input_path, 'train_product_category_id_seq.pkl')
+		with open(save_path, 'wb') as f:
+			pickle.dump(train_seq, f)
+
+		save_path = os.path.join(input_path, 'test_product_category_id_seq.pkl')
+		with open(save_path, 'wb') as f:
+			pickle.dump(test_seq, f)
+
+		save_path = os.path.join(embed_path, 'embed_train_product_category_id_seq.pkl')
+		with open(save_path, 'wb') as f:
+			pickle.dump(seq_dedup, f)
+
+		del join, merge, dic, dic_dedup, train_seq, test_seq, seq_dedup
+		_ = gc.collect()
+
 	logger.info('Ad ID sequence data ready')
 
 	del cl, ad
