@@ -25,7 +25,7 @@ python3 train_w2v.py creative 128
 python3 train_w2v.py ad 128
 python3 train_w2v.py advertiser 128
 python3 train_w2v.py product 128
-python3 train_v2_age_lstm_multiInp.py 10 512 100 1e-3
+python3 train_v2_age_lstm_multiInp.py 40 512 100 1e-3
 ```
 
 <a id='script_documentation'></a>
@@ -53,11 +53,19 @@ python3 train_v2_age_lstm_multiInp.py 10 512 100 1e-3
     |--data_loader_v2.py
     |
     |--clf_lstm.py             # Model based on stacked LSTM
-    |--clf_gnmt.py             # Model based on Google Neural Translation Machine
-    |--clf_tf_enc.py           # Model based on encoder part of Transformer
+    |--clf_gnmt.py             # Model based on GNMT (Google Neural Translation Machine)
+    |--clf_tf_enc.py           # Model based on Encoder part of Transformer
+    |--clf_esim.py             # Model based on ESIM (Enhanced Sequential Inference Model)
+    |--clf_pre_ln_tf.py        # Model based on pre Layer Normalization Transformer
     |
     |--train_v2_age_lstm_multiInp.py
-    |--train_v2_age_tf_enc_crea.py
+    |--train_v2_age_lstm_v2_multiInp.py
+    |--train_v2_age_tf_enc_multiInp.py
+    |--train_v2_age_gnmt_multiInp.py
+    |--train_v2_age_esim_multiInp.py
+    |--train_v2_age_pre_ln_tf_multiInp.py
+    |
+    |--train_v2_gender_lstm_multiInp.py
   ```
 
 <a id='model_training1'></a>
@@ -155,8 +163,8 @@ For machine with small memory please replace the second line with `python3 input
 
 * **Step 3**: run 
 ```bat
-python3 train_w2v.py creative 256
-python3 train_w2v.py ad 256
+python3 train_w2v.py creative 128
+python3 train_w2v.py ad 128
 python3 train_w2v.py advertiser 128
 python3 train_w2v.py product 128
 ```
@@ -189,7 +197,7 @@ Note that `w2v_registry.json` stores all the w2v model artifact paths.
 
 * 官方竞赛手册: [PDF](https://algo-1256087447.cos.ap-nanjing.myqcloud.com/admin/20200509/7da104bd074309285ab56a6e52150ba3.pdf)
 
-* 赛题理解与思路: [思路byCHIZHU](https://mp.weixin.qq.com/s/ISQjOGcc_spSNVeeg75d8w), [分析by鱼遇](https://zhuanlan.zhihu.com/p/141288029), [思路by鱼遇](https://zhuanlan.zhihu.com/p/143185271), [Baseline 1](https://zhuanlan.zhihu.com/p/141842643), [Baseline 2](https://zhuanlan.zhihu.com/p/139270681), [Baseline 3](https://zhuanlan.zhihu.com/p/144346714)
+* 赛题理解与思路: [思路byCHIZHU](https://mp.weixin.qq.com/s/ISQjOGcc_spSNVeeg75d8w), [分析by鱼遇](https://zhuanlan.zhihu.com/p/141288029), [思路by鱼遇](https://zhuanlan.zhihu.com/p/143185271)
 
 * 往届回顾: [17~19](https://zhuanlan.zhihu.com/p/116907937)
 
