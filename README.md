@@ -25,7 +25,9 @@ python3 train_w2v.py creative 128
 python3 train_w2v.py ad 128
 python3 train_w2v.py advertiser 128
 python3 train_w2v.py product 128
-python3 train_v2_age_lstm_multiInp.py 40 512 100 1e-3
+python3 train_w2v.py industry 64
+python3 train_w2v.py product_category 64
+python3 train_v2_age_lstm_multiInp.py 40 1024 100 1e-3
 ```
 
 <a id='script_documentation'></a>
@@ -167,6 +169,8 @@ python3 train_w2v.py creative 128
 python3 train_w2v.py ad 128
 python3 train_w2v.py advertiser 128
 python3 train_w2v.py product 128
+python3 train_w2v.py industry 64
+python3 train_w2v.py product_category 64
 ```
 
 You should have the following files after exection.
@@ -175,14 +179,9 @@ You should have the following files after exection.
 |--Script
   |--embed_artifact
     |--w2v_registry.json
-    |--creative_embed_s256_{random token}
-    |--ad_embed_s256_{random token}
-    |--advertiser_embed_s128_{random token}
-    |--product_embed_s128_{random token}
-    |--embed_train_creative_id_seq.pkl
-    |--embed_train_ad_id_seq.pkl
-    |--embed_train_advertiser_id_seq.pkl
-    |--embed_train_product_id_seq.pkl
+    |--wv_registry.json
+    |--creative_sg_embed_s256_{random token}
+    |--...
   |--model_artifact
   |--input_artifact
   |--output_artifact
@@ -190,7 +189,7 @@ You should have the following files after exection.
   |--test_artifact
 ```
 
-Note that `w2v_registry.json` stores all the w2v model artifact paths.
+Note that `w2v_registry.json` stores all the w2v model artifact paths and `wv_registry.json` stores all the `KeyedVector` artifact paths.
 
 <a id='material'></a>
 ## Materials

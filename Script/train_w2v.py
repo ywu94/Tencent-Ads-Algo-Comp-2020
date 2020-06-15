@@ -20,7 +20,9 @@ corpus_dic = {
 	'creative': os.path.join(embed_path, 'embed_train_creative_id_seq.pkl'),
 	'ad': os.path.join(embed_path, 'embed_train_ad_id_seq.pkl'),
 	'advertiser': os.path.join(embed_path, 'embed_train_advertiser_id_seq.pkl'),
-	'product': os.path.join(embed_path, 'embed_train_product_id_seq.pkl')
+	'product': os.path.join(embed_path, 'embed_train_product_id_seq.pkl'),
+	'industry': os.path.join(embed_path, 'embed_train_industry_id_seq.pkl'),
+	'product_category': os.path.join(embed_path, 'embed_train_product_category_id_seq')
 }
 
 def initiate_logger(log_path):
