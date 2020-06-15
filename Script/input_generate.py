@@ -287,6 +287,8 @@ def generate(logger=None):
 		del join, merge, dic, dic_dedup, train_seq, test_seq, seq_dedup
 		_ = gc.collect()
 
+	logger.info('Ad ID sequence data ready')
+
 	# Prepare Industry Sequence Data
 	if not os.path.isfile(os.path.join(input_path, 'train_industry_id_seq.pkl')):
 		join = ad[['creative_id', 'industry']].drop_duplicates()
@@ -333,6 +335,8 @@ def generate(logger=None):
 
 		del join, merge, dic, dic_dedup, train_seq, test_seq, seq_dedup
 		_ = gc.collect()
+
+	logger.info('Industry ID sequence data ready')
 
 	# Prepare Product Category Sequence Data
 	if not os.path.isfile(os.path.join(input_path, 'train_product_category_id_seq.pkl')):
@@ -381,7 +385,7 @@ def generate(logger=None):
 		del join, merge, dic, dic_dedup, train_seq, test_seq, seq_dedup
 		_ = gc.collect()
 
-	logger.info('Ad ID sequence data ready')
+	logger.info('Product Category ID sequence data ready')
 
 	del cl, ad
 	_ = gc.collect()
