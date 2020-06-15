@@ -84,6 +84,12 @@ def train(model, task, y_list, x_list, checkpoint_dir, checkpoint_prefix, device
 		model_artifact_path = os.path.join(checkpoint_dir, '{}_{}.pth'.format(checkpoint_prefix, resume_surfix))
 		model.load_state_dict(torch.load(model_artifact_path))
 		if logger: logger.info('Model loaded from {}'.format(model_artifact_path))
+	else:
+		pretrain_file_prefix = os.path.join(checkpoint_dir, 'train_v2_gender_lstm_v2_multiInp_pretrain_lstm_extract')
+		model.extraction_layer_0.load_state_dict(torch.load('{}_{}.pth'.format(pretrain_file_prefix, 0)))
+		model.extraction_layer_1.load_state_dict(torch.load('{}_{}.pth'.format(pretrain_file_prefix, 1)))
+		model.extraction_layer_2.load_state_dict(torch.load('{}_{}.pth'.format(pretrain_file_prefix, 2)))
+		model.extraction_layer_3.load_state_dict(torch.load('{}_{}.pth'.format(pretrain_file_prefix, 3)))
 
 	# Set up loss function and optimizer
 	model.to(device)
