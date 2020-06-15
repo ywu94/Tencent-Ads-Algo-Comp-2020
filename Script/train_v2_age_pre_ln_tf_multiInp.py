@@ -17,7 +17,7 @@ from torch import nn
 import torch.nn.functional as F
 
 from data_loader_v2 import data_loader_v2, wv_loader_v2
-from clf_tf_enc import Transformer_Encoder_Classifier
+from clf_pre_ln_tf import Multi_Seq_Pre_LN_Transformer_Encoder_Classifier
 
 cwd = os.getcwd()
 train_path = os.path.join(cwd, 'train_artifact')
@@ -89,6 +89,7 @@ def train(model, task, y_list, x_list, checkpoint_dir, checkpoint_prefix, device
 	model.to(device)
 	loss_fn = nn.CrossEntropyLoss()
 	optimizer = torch.optim.Adam(model.parameters(), lr=lr, amsgrad=True)
+	scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=0, threshold=1e-5, threshold_mode='abs')
 
 	# Main Loop
 	for epoch, file_idx_list in task:
@@ -184,6 +185,10 @@ def train(model, task, y_list, x_list, checkpoint_dir, checkpoint_prefix, device
 		if logger:
 			logger.info('Epoch {}/{} Done - Test Loss: {:.6f}, Test Accuracy: {:.6f}'.format(epoch, task[-1][0], test_running_loss/test_n_batch, acc_score))
 
+		scheduler.step(test_running_loss/test_n_batch)
+		if logger:
+			logger.info('Epoch {}/{} - Updated Learning Rate: {:.8f}'.format(epoch, task[-1][0], optimizer.param_groups[0]['lr']))
+
 if __name__=='__main__':
 	assert len(sys.argv) in (5, 7)
 	end_epoch = int(sys.argv[1])
@@ -204,7 +209,7 @@ if __name__=='__main__':
 			resume_surfix = '{}_{}'.format(resume_epoch, resume_file-1)
 			task = [(resume_epoch, np.arange(resume_file,10))]+[(i, np.arange(1,10)) for i in range(resume_epoch+1, end_epoch+1)]
 
-	task_name = 'train_v2_age_tf_enc_crea'
+	task_name = 'train_v2_age_pre_ln_tf_multiInp'
 	checkpoint_dir = os.path.join(model_path, task_name)
 	if not os.path.isdir(checkpoint_dir): os.mkdir(checkpoint_dir)
 	checkpoint_prefix = task_name
@@ -212,7 +217,7 @@ if __name__=='__main__':
 	logger.info('Batch Size: {}, Max Sequence Length: {}, Learning Rate: {}'.format(batch_size, max_seq_len, lr))
 
 	y_list = ['age']
-	x_list = ['creative']
+	x_list = ['creative', 'ad', 'product', 'advertiser']
 
 	DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 	logger.info('Device in Use: {}'.format(DEVICE))
@@ -223,9 +228,10 @@ if __name__=='__main__':
 		a = torch.cuda.memory_allocated(DEVICE)/1024**3
 		logger.info('CUDA Memory: Total {:.2f} GB, Cached {:.2f} GB, Allocated {:.2f} GB'.format(t,c,a))
 
-	model = Transformer_Encoder_Classifier(128, 10, 4, 8, 1024, DEVICE)
+	model = Multi_Seq_Pre_LN_Transformer_Encoder_Classifier([128, 128, 128, 128], [128, 128, 128, 128], 1, 4, 10, max_seq_len=max_seq_len, device=DEVICE)
 
 	logger.info('Model Parameter #: {}'.format(get_torch_module_num_of_parameter(model)))
 
 	train(model, task, y_list, x_list, checkpoint_dir, checkpoint_prefix, DEVICE, 
 		batch_size=batch_size, max_seq_len=max_seq_len, lr=lr, resume_surfix=resume_surfix, logger=logger)
+	
