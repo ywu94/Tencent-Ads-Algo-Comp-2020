@@ -224,7 +224,7 @@ if __name__=='__main__':
 
 	if len(sys.argv)==5:
 		resume_surfix = None
-		task = [(i, np.arange(1,10)) for i in range(1, end_epoch+1)]
+		task = [(i, np.arange(1,9)) for i in range(1, end_epoch+1)]
 	else:
 		resume_epoch = int(sys.argv[5])
 		resume_file = int(sys.argv[6])
