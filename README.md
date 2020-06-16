@@ -27,7 +27,7 @@ python3 train_w2v.py advertiser 128
 python3 train_w2v.py product 128
 python3 train_w2v.py industry 64
 python3 train_w2v.py product_category 64
-python3 train_v2_age_lstm_multiInp.py 40 1024 100 1e-3
+python3 train_v2_age_final_pre_ln_tf_multiInp.py 40 1024 100 1e-3
 ```
 
 <a id='script_documentation'></a>
@@ -59,15 +59,7 @@ python3 train_v2_age_lstm_multiInp.py 40 1024 100 1e-3
     |--clf_tf_enc.py           # Model based on Encoder part of Transformer
     |--clf_esim.py             # Model based on ESIM (Enhanced Sequential Inference Model)
     |--clf_pre_ln_tf.py        # Model based on pre Layer Normalization Transformer
-    |
-    |--train_v2_age_lstm_multiInp.py
-    |--train_v2_age_lstm_v2_multiInp.py
-    |--train_v2_age_tf_enc_multiInp.py
-    |--train_v2_age_gnmt_multiInp.py
-    |--train_v2_age_esim_multiInp.py
-    |--train_v2_age_pre_ln_tf_multiInp.py
-    |
-    |--train_v2_gender_lstm_multiInp.py
+    |--clf_final.py            # Model for final submission
   ```
 
 <a id='model_training1'></a>

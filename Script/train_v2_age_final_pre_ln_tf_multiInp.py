@@ -1,7 +1,10 @@
+"""
+Use file 1~8 for training, 9~10 for testing
+"""
+
 import os
 import sys
 import numpy as np 
-import pandas as pd
 import logging
 import gc
 import tqdm
@@ -79,7 +82,7 @@ def train(model, task, y_list, x_list, checkpoint_dir, checkpoint_prefix, device
 	: resume_surfix - str: model to reload if not training from scratch
 	"""
 	global input_split_path, embed_path
-	if not gc.isenabled(): gc.enable
+	if not gc.isenabled(): gc.enable()
 
 	# Check checkpoint directory
 	if not os.path.isdir(checkpoint_dir): os.mkdir(checkpoint_dir)
@@ -91,25 +94,27 @@ def train(model, task, y_list, x_list, checkpoint_dir, checkpoint_prefix, device
 
 	# Load model if not train from scratch
 	last_step = -1
+	loss_fn = nn.CrossEntropyLoss()
+	optimizer = torch.optim.Adam([{'params':model.parameters(), 'initial_lr':1}], betas=(0.9, 0.98), eps=1e-9, amsgrad=True)
+
 	if resume_surfix is not None:
 		model_artifact_path = os.path.join(checkpoint_dir, '{}_{}.pth'.format(checkpoint_prefix, resume_surfix))
 		model.load_state_dict(torch.load(model_artifact_path))
 		if logger: logger.info('Model loaded from {}'.format(model_artifact_path))
+		optimizer_artifact_path = os.path.join(checkpoint_dir, '{}_{}_opti.pth'.format(checkpoint_prefix, resume_surfix))
+		if logger: logger.info('Model loaded from {}'.format(optimizer_artifact_path))
 
 		t = resume_surfix.split('_')
 		ep, fi = int(t[0]), int(t[1])
 		last_step = (ep-1)*batch_per_epoch+fi*batch_per_file-1
 		if logger: logger.info('Learning rate resumed from step {}'.format(last_step+1))
+
+	scheduler = get_transformer_scheduler(optimizer, 512, 1000, last_step=last_step)
+	model.to(device)
 	
 	# Initiate word vector host
 	wv = wv_loader_v2(x_list, embed_path, max_seq_len=max_seq_len)
 	if logger: logger.info('Word vector host ready')
-
-	# Set up loss function and optimizer
-	model.to(device)
-	loss_fn = nn.CrossEntropyLoss()
-	optimizer = torch.optim.Adam([{'params':model.parameters(), 'initial_lr':1}], betas=(0.9, 0.98), eps=1e-9, amsgrad=True)
-	scheduler = get_transformer_scheduler(optimizer, 512, batch_per_epoch*3, last_step=last_step)
 	
 	# Main Loop
 	for epoch, file_idx_list in task:
@@ -122,7 +127,7 @@ def train(model, task, y_list, x_list, checkpoint_dir, checkpoint_prefix, device
 		model.train()
 		train_running_loss, train_n_batch = 0, 0
 
-		for split_idx in file_idx_list:
+		for index, split_idx in enumerate(file_idx_list, start=1):
 			dl = data_loader_v2(wv, y_list, x_list, input_split_path, split_idx, batch_size=batch_size, shuffle=True)
 			it = iter(dl)
 			while True:
@@ -155,13 +160,15 @@ def train(model, task, y_list, x_list, checkpoint_dir, checkpoint_prefix, device
 			_ = gc.collect()
 
 			if logger:
-				logger.info('Epoch {}/{} - File {}/9 Done - Train Loss: {:.6f}, Learning Rate {:.7f}'.format(epoch, task[-1][0], split_idx, train_running_loss/train_n_batch, optimizer.param_groups[0]['lr']))
+				logger.info('Epoch {}/{} - File {}/8 Done - Train Loss: {:.6f}, Learning Rate {:.7f}'.format(epoch, task[-1][0], start, train_running_loss/train_n_batch, optimizer.param_groups[0]['lr']))
 
-			# Save model state dict
+			# Save model & optimizer state dict
 			ck_file_name = '{}_{}_{}.pth'.format(checkpoint_prefix, epoch, split_idx)
 			ck_file_path = os.path.join(checkpoint_dir, ck_file_name)
-		
 			torch.save(model.state_dict(), ck_file_path)
+			op_file_name = '{}_{}_{}_opti.pth'.format(checkpoint_prefix, epoch, split_idx)
+			op_file_path = os.path.join(checkpoint_dir, op_file_name)
+			torch.save(optimizer.state_dict(), op_file_path)
 
 		torch.cuda.empty_cache()
 
@@ -171,31 +178,32 @@ def train(model, task, y_list, x_list, checkpoint_dir, checkpoint_prefix, device
 		true_y, pred_y = [], []
 
 		with torch.no_grad():
-			dl = data_loader_v2(wv, y_list, x_list, input_split_path, 10, batch_size=batch_size, shuffle=True)
-			it = iter(dl)
-			while True:
-				try:
-					yl, xl, x_seq_len = next(it)
-					y = yl[0].to(device)
-					x = torch.cat(xl, dim=2).to(device)
-					yp = F.softmax(model(x, x_seq_len), dim=1)
-					loss = loss_fn(yp,y)
+			for split_idx in [9, 10]:
+				dl = data_loader_v2(wv, y_list, x_list, input_split_path, split_idx, batch_size=batch_size, shuffle=True)
+				it = iter(dl)
+				while True:
+					try:
+						yl, xl, x_seq_len = next(it)
+						y = yl[0].to(device)
+						x = torch.cat(xl, dim=2).to(device)
+						yp = F.softmax(model(x, x_seq_len), dim=1)
+						loss = loss_fn(yp,y)
 
-					pred_y.extend(list(yp.cpu().detach().numpy()))
-					true_y.extend(list(y.cpu().detach().numpy()))
+						pred_y.extend(list(yp.cpu().detach().numpy()))
+						true_y.extend(list(y.cpu().detach().numpy()))
 
-					test_running_loss += loss.item()
-					test_n_batch += 1
+						test_running_loss += loss.item()
+						test_n_batch += 1
 
-				except StopIteration:
-					break
+					except StopIteration:
+						break
 
-				except Exception as e:
-					if logger: logger.error(e)
-					return 
+					except Exception as e:
+						if logger: logger.error(e)
+						return 
 
-			del dl, it
-			_ = gc.collect()
+				del dl, it
+				_ = gc.collect()
 
 		pred = np.argmax(np.array(pred_y), 1)
 		true = np.array(true_y).reshape((-1,))
@@ -221,13 +229,13 @@ if __name__=='__main__':
 		resume_epoch = int(sys.argv[5])
 		resume_file = int(sys.argv[6])
 		if resume_file==1:
-			resume_surfix = '{}_{}'.format(resume_epoch-1, 9)
-			task = [(i, np.arange(1,10)) for i in range(resume_epoch, end_epoch+1)]
+			resume_surfix = '{}_{}'.format(resume_epoch-1, 8)
+			task = [(i, np.arange(1,9)) for i in range(resume_epoch, end_epoch+1)]
 		else:
 			resume_surfix = '{}_{}'.format(resume_epoch, resume_file-1)
-			task = [(resume_epoch, np.arange(resume_file,10))]+[(i, np.arange(1,10)) for i in range(resume_epoch+1, end_epoch+1)]
+			task = [(resume_epoch, np.arange(resume_file,9))]+[(i, np.arange(1,9)) for i in range(resume_epoch+1, end_epoch+1)]
 
-	task_name = 'train_v2_age_final_pre_ln_tf_multiInp'
+	task_name = 'train_v2_age_final_pre_ln_tf_multiInp_p1'
 	checkpoint_dir = os.path.join(model_path, task_name)
 	if not os.path.isdir(checkpoint_dir): os.mkdir(checkpoint_dir)
 	checkpoint_prefix = task_name
