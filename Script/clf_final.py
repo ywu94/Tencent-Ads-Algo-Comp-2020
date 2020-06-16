@@ -90,33 +90,33 @@ class Final_LSTM(nn.Module):
 #      Final Model - 2       #
 # ========================== #
 
-class Extraction_LSTM_Simp(nn.Module):
+class Extraction_GRU(nn.Module):
 	def __init__(self, embed_size, hidden_size, max_seq_len=100, dropout=0.2, **kwargs):
-		super(Extraction_LSTM_Simp, self).__init__(**kwargs)
+		super(Extraction_GRU, self).__init__(**kwargs)
 		self.embed_size = embed_size
 		self.hidden_size = hidden_size
 		self.max_seq_len = max_seq_len
 		self.dropout = dropout
 		
-		self.bi_lstm = nn.LSTM(input_size=embed_size, hidden_size=hidden_size, batch_first=True, bidirectional=True)
+		self.bi_gru = nn.GRU(input_size=embed_size, hidden_size=hidden_size, batch_first=True, bidirectional=True)
 		self.dropout_1 = nn.Dropout(p=dropout)
 		self.layernorm_1 = nn.LayerNorm(2*hidden_size)
-		self.lstm_1 = nn.LSTM(input_size=2*hidden_size, hidden_size=2*hidden_size, batch_first=True)
+		self.gru_1 = nn.GRU(input_size=2*hidden_size, hidden_size=2*hidden_size, batch_first=True)
 		self.dropout_2 = nn.Dropout(p=dropout)
 		self.layernorm_2 = nn.LayerNorm(2*hidden_size)
-		self.lstm_2 = nn.LSTM(input_size=2*hidden_size, hidden_size=2*hidden_size, batch_first=True)
+		self.gru_2 = nn.GRU(input_size=2*hidden_size, hidden_size=2*hidden_size, batch_first=True)
 		
 	def forward(self, inp, inp_len):
-		inp = self.dropout_1(self.bi_lstm(inp)[0].permute(1,0,2))
+		inp = self.dropout_1(self.bi_gru(inp)[0])
 		inp1 = self.layernorm_1(inp)
-		inp1 = self.dropout_2(self.lstm_1(inp1)[0].permute(1,0,2))
+		inp1 = self.dropout_2(self.gru_1(inp1)[0])
 		inp = self.layernorm_2(inp+inp1)
-		inp = self.lstm_2(inp)[0].permute(1,0,2)
+		inp = self.gru_2(inp)[0]
 		return inp
 
-class Final_LSTM_Simp(nn.Module):
+class Final_GRU(nn.Module):
 	def __init__(self, out_size, embed_size, hidden_size, max_seq_len=100, rnn_dropout=0.2, dnn_dropout=0.5, **kwargs):
-		super(Final_LSTM_Simp, self).__init__(**kwargs)
+		super(Final_GRU, self).__init__(**kwargs)
 		self.out_size = out_size
 		self.embed_size = embed_size
 		self.hidden_size = hidden_size
@@ -124,7 +124,7 @@ class Final_LSTM_Simp(nn.Module):
 		self.rnn_dropout = rnn_dropout
 		self.dnn_dropout = dnn_dropout
 
-		self.extraction_layer = Extraction_LSTM_Simp(embed_size, hidden_size, max_seq_len=max_seq_len, dropout=rnn_dropout)
+		self.extraction_layer = Extraction_GRU(embed_size, hidden_size, max_seq_len=max_seq_len, dropout=rnn_dropout)
 		self.bn_layer = nn.BatchNorm1d(4*hidden_size)
 		self.dropout_layer = nn.Dropout(p=dnn_dropout)
 		self.output_layer = Output_MLP(4*hidden_size, out_size, dropout=dnn_dropout)
@@ -219,9 +219,8 @@ class Final_PreLN_Transformer(nn.Module):
 
 	def forward(self, inp, inp_len):
 		inp = self.extraction_layer(inp, inp_len)
-		inp1 = nn.utils.rnn.pack_padded_sequence(self.ln_layer(inp), batch_first=True, lengths=inp_len, enforce_sorted=False)
-		inp1 = self.lstm_layer(inp1)[0]
-		inp = inp + self.dropout1(nn.utils.rnn.pad_packed_sequence(inp1, batch_first=True, total_length=self.max_seq_len)[0])
+		inp1 = self.lstm_layer(self.ln_layer(inp))[0]
+		inp = inp + self.dropout1(inp1)
 		out1 = inp[np.arange(len(inp_len)),inp_len-1,:]
 		out2 = torch.stack([torch.max(inp[index,:l,:], dim=0)[0] for index, l in enumerate(inp_len)], dim=0)
 		out = self.dropout2(F.relu(self.bn_layer(torch.cat((out1, out2), dim=1))))

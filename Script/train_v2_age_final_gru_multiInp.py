@@ -17,7 +17,7 @@ from torch import nn
 import torch.nn.functional as F
 
 from data_loader_v2 import data_loader_v2, wv_loader_v2
-from clf_final import Final_PreLN_Transformer
+from clf_final import Final_GRU
 
 cwd = os.getcwd()
 train_path = os.path.join(cwd, 'train_artifact')
@@ -55,15 +55,6 @@ def get_torch_module_num_of_parameter(model):
 	params = sum([np.prod(p.size()) for p in model_parameters])
 	return params
 
-def get_transformer_scheduler(optimizer, d_model, n_warmup, last_step=-1):
-	"""
-	Learning rate scheduler as described in "Attention is what you need".
-	"""
-	def lr_lambda(current_step):
-		current_step += 1
-		return max(d_model**-0.5 * min(current_step**-0.5, current_step*n_warmup**-1.5), 1e-5)
-	return torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda, last_epoch=last_step)
-
 def train(model, task, y_list, x_list, checkpoint_dir, checkpoint_prefix, device, batch_size=512, max_seq_len=100, lr=1e-3, resume_surfix=None, logger=None):
 	"""
 	: model - torch.nn.module: model to be trained
@@ -84,33 +75,22 @@ def train(model, task, y_list, x_list, checkpoint_dir, checkpoint_prefix, device
 	# Check checkpoint directory
 	if not os.path.isdir(checkpoint_dir): os.mkdir(checkpoint_dir)
 
-	# Calculate number of batch
-	div, mod = divmod(90000, batch_size)
-	batch_per_file = div + min(1, mod)
-	batch_per_epoch = 9 * batch_per_file
+	# Initiate word vector host
+	wv = wv_loader_v2(x_list, embed_path, max_seq_len=max_seq_len)
+	if logger: logger.info('Word vector host ready')
 
 	# Load model if not train from scratch
-	last_step = -1
 	if resume_surfix is not None:
 		model_artifact_path = os.path.join(checkpoint_dir, '{}_{}.pth'.format(checkpoint_prefix, resume_surfix))
 		model.load_state_dict(torch.load(model_artifact_path))
 		if logger: logger.info('Model loaded from {}'.format(model_artifact_path))
 
-		t = resume_surfix.split('_')
-		ep, fi = int(t[0]), int(t[1])
-		last_step = (ep-1)*batch_per_epoch+fi*batch_per_file-1
-		if logger: logger.info('Learning rate resumed from step {}'.format(last_step+1))
-	
-	# Initiate word vector host
-	wv = wv_loader_v2(x_list, embed_path, max_seq_len=max_seq_len)
-	if logger: logger.info('Word vector host ready')
-
 	# Set up loss function and optimizer
 	model.to(device)
 	loss_fn = nn.CrossEntropyLoss()
-	optimizer = torch.optim.Adam([{'params':model.parameters(), 'initial_lr':1}], betas=(0.9, 0.98), eps=1e-9, amsgrad=True)
-	scheduler = get_transformer_scheduler(optimizer, 512, batch_per_epoch*3, last_step=last_step)
-	
+	optimizer = torch.optim.Adam(model.parameters(), lr=lr, amsgrad=True)
+	scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=0, threshold=1e-5, threshold_mode='abs')
+
 	# Main Loop
 	for epoch, file_idx_list in task:
 		if logger:
@@ -142,8 +122,6 @@ def train(model, task, y_list, x_list, checkpoint_dir, checkpoint_prefix, device
 					train_running_loss += loss.item()
 					train_n_batch += 1
 
-					scheduler.step()
-
 				except StopIteration:
 					break
 
@@ -155,7 +133,7 @@ def train(model, task, y_list, x_list, checkpoint_dir, checkpoint_prefix, device
 			_ = gc.collect()
 
 			if logger:
-				logger.info('Epoch {}/{} - File {}/9 Done - Train Loss: {:.6f}, Learning Rate {:.7f}'.format(epoch, task[-1][0], split_idx, train_running_loss/train_n_batch, optimizer.param_groups[0]['lr']))
+				logger.info('Epoch {}/{} - File {}/9 Done - Train Loss: {:.6f}'.format(epoch, task[-1][0], split_idx, train_running_loss/train_n_batch))
 
 			# Save model state dict
 			ck_file_name = '{}_{}_{}.pth'.format(checkpoint_prefix, epoch, split_idx)
@@ -207,6 +185,10 @@ def train(model, task, y_list, x_list, checkpoint_dir, checkpoint_prefix, device
 		if logger:
 			logger.info('Epoch {}/{} Done - Test Loss: {:.6f}, Test Accuracy: {:.6f}'.format(epoch, task[-1][0], test_running_loss/test_n_batch, acc_score))
 
+		scheduler.step(test_running_loss/test_n_batch)
+		if logger:
+			logger.info('Epoch {}/{} - Updated Learning Rate: {:.8f}'.format(epoch, task[-1][0], optimizer.param_groups[0]['lr']))
+
 if __name__=='__main__':
 	assert len(sys.argv) in (5, 7)
 	end_epoch = int(sys.argv[1])
@@ -227,15 +209,15 @@ if __name__=='__main__':
 			resume_surfix = '{}_{}'.format(resume_epoch, resume_file-1)
 			task = [(resume_epoch, np.arange(resume_file,10))]+[(i, np.arange(1,10)) for i in range(resume_epoch+1, end_epoch+1)]
 
-	task_name = 'train_v2_age_final_pre_ln_tf_multiInp'
+	task_name = 'train_v2_age_final_gru_multiInp'
 	checkpoint_dir = os.path.join(model_path, task_name)
 	if not os.path.isdir(checkpoint_dir): os.mkdir(checkpoint_dir)
 	checkpoint_prefix = task_name
 	logger = initiate_logger(os.path.join(checkpoint_dir, '{}.log'.format(task_name)))
-	logger.info('Batch Size: {}, Max Sequence Length: {}, Learning Rate: {}'.format(batch_size, max_seq_len, 'Dynamic'))
+	logger.info('Batch Size: {}, Max Sequence Length: {}, Learning Rate: {}'.format(batch_size, max_seq_len, lr))
 
 	y_list = ['age']
-	x_list = ['creative', 'ad', 'product', 'advertiser']
+	x_list = ['creative', 'ad', 'product', 'advertiser', 'industry', 'product_category']
 
 	DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 	logger.info('Device in Use: {}'.format(DEVICE))
@@ -246,7 +228,7 @@ if __name__=='__main__':
 		a = torch.cuda.memory_allocated(DEVICE)/1024**3
 		logger.info('CUDA Memory: Total {:.2f} GB, Cached {:.2f} GB, Allocated {:.2f} GB'.format(t,c,a))
 
-	model = Final_PreLN_Transformer(10, 512, 1, 8, intermediate_size=2048, device=DEVICE, max_seq_len=max_seq_len)
+	model = Final_GRU(10, 640, 256, max_seq_len=max_seq_len)
 
 	logger.info('Model Parameter #: {}'.format(get_torch_module_num_of_parameter(model)))
 
