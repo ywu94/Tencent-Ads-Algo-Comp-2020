@@ -99,7 +99,7 @@ def train(model, task, y_list, x_list, checkpoint_dir, checkpoint_prefix, device
 		t = resume_surfix.split('_')
 		ep, fi = int(t[0]), int(t[1])
 		last_step = (ep-1)*batch_per_epoch+fi*batch_per_file-1
-		if logger: logger.info('Learning rate resumed from step {}'.format(last_step))
+		if logger: logger.info('Learning rate resumed from step {}'.format(last_step+1))
 	
 	# Initiate word vector host
 	wv = wv_loader_v2(x_list, embed_path, max_seq_len=max_seq_len)
@@ -109,9 +109,8 @@ def train(model, task, y_list, x_list, checkpoint_dir, checkpoint_prefix, device
 	model.to(device)
 	loss_fn = nn.CrossEntropyLoss()
 	optimizer = torch.optim.Adam([{'params':model.parameters(), 'initial_lr':1}], betas=(0.9, 0.98), eps=1e-9, amsgrad=True)
-	scheduler = get_transformer_scheduler(optimizer, 640, batch_per_epoch, last_step=last_step)
+	scheduler = get_transformer_scheduler(optimizer, 640, batch_per_epoch*3, last_step=last_step)
 	
-
 	# Main Loop
 	for epoch, file_idx_list in task:
 		if logger:
@@ -156,7 +155,7 @@ def train(model, task, y_list, x_list, checkpoint_dir, checkpoint_prefix, device
 			_ = gc.collect()
 
 			if logger:
-				logger.info('Epoch {}/{} - File {}/9 Done - Train Loss: {:.6f}'.format(epoch, task[-1][0], split_idx, train_running_loss/train_n_batch))
+				logger.info('Epoch {}/{} - File {}/9 Done - Train Loss: {:.6f}, Learning Rate {:.7f}'.format(epoch, task[-1][0], split_idx, train_running_loss/train_n_batch, optimizer.param_groups[0]['lr']))
 
 			# Save model state dict
 			ck_file_name = '{}_{}_{}.pth'.format(checkpoint_prefix, epoch, split_idx)
@@ -207,7 +206,6 @@ def train(model, task, y_list, x_list, checkpoint_dir, checkpoint_prefix, device
 
 		if logger:
 			logger.info('Epoch {}/{} Done - Test Loss: {:.6f}, Test Accuracy: {:.6f}'.format(epoch, task[-1][0], test_running_loss/test_n_batch, acc_score))
-			logger.info('Epoch {}/{} - Updated Learning Rate: {:.8f}'.format(epoch, task[-1][0], optimizer.param_groups[0]['lr']))
 
 if __name__=='__main__':
 	assert len(sys.argv) in (5, 7)
@@ -234,7 +232,7 @@ if __name__=='__main__':
 	if not os.path.isdir(checkpoint_dir): os.mkdir(checkpoint_dir)
 	checkpoint_prefix = task_name
 	logger = initiate_logger(os.path.join(checkpoint_dir, '{}.log'.format(task_name)))
-	logger.info('Batch Size: {}, Max Sequence Length: {}, Learning Rate: {}'.format(batch_size, max_seq_len, lr))
+	logger.info('Batch Size: {}, Max Sequence Length: {}, Learning Rate: {}'.format(batch_size, max_seq_len, 'Dynamic'))
 
 	y_list = ['age']
 	x_list = ['creative', 'ad', 'product', 'advertiser', 'industry', 'product_category']
