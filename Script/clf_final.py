@@ -238,7 +238,7 @@ class Final_PreLN_Transformer(nn.Module):
 		self.dropout1 = nn.Dropout(p=rnn_dropout)
 		self.bn_layer = nn.BatchNorm1d(2*embed_size)
 		self.dropout2 = nn.Dropout(p=dnn_dropout)
-		self.output_layer = Output_MLP(2*embed_size, out_size, dropout=dnn_dropout)
+		self.output_layer = Output_DMLP(2*embed_size, out_size, dropout=dnn_dropout)
 
 	def forward(self, inp, inp_len):
 		inp = self.extraction_layer(inp, inp_len)

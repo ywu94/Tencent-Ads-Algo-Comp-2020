@@ -127,7 +127,7 @@ def train(model, task, y_list, x_list, checkpoint_dir, checkpoint_prefix, device
 		model.train()
 		train_running_loss, train_n_batch = 0, 0
 
-		for split_idx in file_idx_list:
+		for index, split_idx in enumerate(file_idx_list, start=1):
 			dl = data_loader_v2(wv, y_list, x_list, input_split_path, split_idx, batch_size=batch_size, shuffle=True)
 			it = iter(dl)
 			while True:
@@ -160,7 +160,7 @@ def train(model, task, y_list, x_list, checkpoint_dir, checkpoint_prefix, device
 			_ = gc.collect()
 
 			if logger:
-				logger.info('Epoch {}/{} - File {}/9 Done - Train Loss: {:.6f}, Learning Rate {:.7f}'.format(epoch, task[-1][0], split_idx, train_running_loss/train_n_batch, optimizer.param_groups[0]['lr']))
+				logger.info('Epoch {}/{} - File {}/8 Done - Train Loss: {:.6f}, Learning Rate {:.7f}'.format(epoch, task[-1][0], start, train_running_loss/train_n_batch, optimizer.param_groups[0]['lr']))
 
 			# Save model & optimizer state dict
 			ck_file_name = '{}_{}_{}.pth'.format(checkpoint_prefix, epoch, split_idx)
