@@ -99,14 +99,14 @@ def train(model, task, y_list, x_list, checkpoint_dir, checkpoint_prefix, device
 		model.load_state_dict(torch.load(model_artifact_path))
 		if logger: logger.info('Model loaded from {}'.format(model_artifact_path))
 		optimizer_artifact_path = os.path.join(checkpoint_dir, '{}_{}_opti.pth'.format(checkpoint_prefix, resume_surfix))
-		if logger: logger,info('Model loaded from {}'.format(optimizer_artifact_path))
+		if logger: logger.info('Model loaded from {}'.format(optimizer_artifact_path))
 
 		t = resume_surfix.split('_')
 		ep, fi = int(t[0]), int(t[1])
 		last_step = (ep-1)*batch_per_epoch+fi*batch_per_file-1
 		if logger: logger.info('Learning rate resumed from step {}'.format(last_step+1))
 
-	scheduler = get_transformer_scheduler(optimizer, 512, batch_per_epoch*3, last_step=last_step)
+	scheduler = get_transformer_scheduler(optimizer, 512, 1000, last_step=last_step)
 	model.to(device)
 	
 	# Initiate word vector host
@@ -239,7 +239,7 @@ if __name__=='__main__':
 	logger.info('Batch Size: {}, Max Sequence Length: {}, Learning Rate: {}'.format(batch_size, max_seq_len, 'Dynamic'))
 
 	y_list = ['age']
-	x_list = ['product']#['creative', 'ad', 'product', 'advertiser']
+	x_list = ['creative', 'ad', 'product', 'advertiser']
 
 	DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 	logger.info('Device in Use: {}'.format(DEVICE))
@@ -250,7 +250,7 @@ if __name__=='__main__':
 		a = torch.cuda.memory_allocated(DEVICE)/1024**3
 		logger.info('CUDA Memory: Total {:.2f} GB, Cached {:.2f} GB, Allocated {:.2f} GB'.format(t,c,a))
 
-	model = Final_PreLN_Transformer(10, 128, 1, 8, intermediate_size=2048, device=DEVICE, max_seq_len=max_seq_len)
+	model = Final_PreLN_Transformer(10, 512, 1, 8, intermediate_size=2048, device=DEVICE, max_seq_len=max_seq_len)
 
 	logger.info('Model Parameter #: {}'.format(get_torch_module_num_of_parameter(model)))
 

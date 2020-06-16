@@ -24,10 +24,33 @@ class Output_MLP(nn.Module):
 		self.mlp_3 = nn.Linear(2048, out_size)	
 
 	def forward(self, inp):
-		mlp_out = self.mlp_1(inp)                                                         # (batch_size, 1024)
-		mlp_out = self.mlp_dropout_1(F.relu(self.batchnorm_1(mlp_out)))                   # (batch_size, 1024)
-		mlp_out = self.mlp_2(mlp_out)                                                     # (batch_size, 512)
-		mlp_out = self.mlp_dropout_2(F.relu(self.batchnorm_2(mlp_out)))                   # (batch_size, 512)
+		mlp_out = self.mlp_1(inp)                                                         # (batch_size, 4096)
+		mlp_out = self.mlp_dropout_1(F.relu(self.batchnorm_1(mlp_out)))                   # (batch_size, 4096)
+		mlp_out = self.mlp_2(mlp_out)                                                     # (batch_size, 2048)
+		mlp_out = self.mlp_dropout_2(F.relu(self.batchnorm_2(mlp_out)))                   # (batch_size, 2048)
+		mlp_out = self.mlp_3(mlp_out)                                                     # (batch_size, out_size)
+		return mlp_out 
+
+class Output_DMLP(nn.Module):
+	def __init__(self, inp_size, out_size, dropout=0.5, **kwargs):
+		super(Output_DMLP, self).__init__(**kwargs)
+		self.inp_size = inp_size
+		self.out_size = out_size
+		self.dropout = dropout
+		
+		self.mlp_1 = nn.Linear(inp_size, inp_size*4)
+		self.batchnorm_1 = nn.BatchNorm1d(inp_size*4)
+		self.mlp_dropout_1 = nn.Dropout(p=dropout)
+		self.mlp_2 = nn.Linear(inp_size*4, inp_size)
+		self.batchnorm_2 = nn.BatchNorm1d(inp_size)
+		self.mlp_dropout_2 = nn.Dropout(p=dropout)
+		self.mlp_3 = nn.Linear(inp_size, out_size)	
+
+	def forward(self, inp):
+		mlp_out = self.mlp_1(inp)                                                         # (batch_size, 4*inp_size)
+		mlp_out = self.mlp_dropout_1(F.relu(self.batchnorm_1(mlp_out)))                   # (batch_size, 4*inp_size)
+		mlp_out = self.mlp_2(mlp_out)                                                     # (batch_size, inp_size)
+		mlp_out = self.mlp_dropout_2(F.relu(self.batchnorm_2(mlp_out)))                   # (batch_size, inp_size)
 		mlp_out = self.mlp_3(mlp_out)                                                     # (batch_size, out_size)
 		return mlp_out 
 
@@ -127,7 +150,7 @@ class Final_GRU(nn.Module):
 		self.extraction_layer = Extraction_GRU(embed_size, hidden_size, max_seq_len=max_seq_len, dropout=rnn_dropout)
 		self.bn_layer = nn.BatchNorm1d(4*hidden_size)
 		self.dropout_layer = nn.Dropout(p=dnn_dropout)
-		self.output_layer = Output_MLP(4*hidden_size, out_size, dropout=dnn_dropout)
+		self.output_layer = Output_DMLP(4*hidden_size, out_size, dropout=dnn_dropout)
 
 	def forward(self, inp, inp_len):
 		inp = self.extraction_layer(inp, inp_len)
