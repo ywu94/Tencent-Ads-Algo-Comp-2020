@@ -211,7 +211,7 @@ class Extraction_PreLN_Transformer(nn.Module):
 
 		for index in range(n_layer):
 			setattr(self, 'pre_ln_tf_encoder_{}'.format(index), 
-				PreLN_Transformer_Encoder(d_model, n_head, intermediate_size=intermediate_size, device=self.device, dropout=0.1))
+				PreLN_Transformer_Encoder(d_model, n_head, intermediate_size=intermediate_size, device=self.device, dropout=dropout))
 
 	def forward(self, inp, inp_len):
 		for index in range(self.n_layer):
