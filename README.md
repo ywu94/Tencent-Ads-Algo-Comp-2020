@@ -27,7 +27,7 @@ python3 train_w2v.py advertiser 128
 python3 train_w2v.py product 128
 python3 train_w2v.py industry 64
 python3 train_w2v.py product_category 64
-python3 train_v2_age_final_pre_ln_tf_multiInp.py 40 1024 100 1e-3
+python3 train_v2_age_final_pre_ln_tf_multiInp.py 40 2048 100 1e-3
 ```
 
 <a id='script_documentation'></a>
@@ -38,15 +38,14 @@ python3 train_v2_age_final_pre_ln_tf_multiInp.py 40 1024 100 1e-3
 
 * How to run training script
 
-  Syntax: `python3 train_v2_{some script name}.py 10 512 100 1e-3`
+  Syntax: `python3 train_v2_{some script name}.py 40 2048 100 1e-3`
   > **Argument**:
-  > 1. *(Required,INT)* 0 means training from scratch and a positive number means loading the corresponding epoch and start training from there <br/>
-  > 2. *(Required,INT)* target epoch to train
-  > 3. *(Required,INT)* batch size for training
-  > 4. *(Required,INT)* maximal length of input sequence, smaller length can help train withb larger batch size
-  > 5. *(Required,FLOAT)* learning rate for adam optimizer
-  > 6. *(Optional, INT)* If nothing specified then the model will be trained from scratch, otherwise it indicates the epoch to resume training
-  > 7. *(Optional, INT)* If nothing specified then the model will be trained from scratch, otherwise it indicates the training file to resume training
+  > 1. *(Required,INT)* target epoch to train
+  > 2. *(Required,INT)* batch size for training
+  > 3. *(Required,INT)* maximal length of input sequence, smaller length can help train withb larger batch size
+  > 4. *(Required,FLOAT)* learning rate for adam optimizer
+  > 5. *(Optional, INT)* If nothing specified then the model will be trained from scratch, otherwise it indicates the epoch to resume training
+  > 6. *(Optional, INT)* If nothing specified then the model will be trained from scratch, otherwise it indicates the training file to resume training
   >    * Example: `9, 2` indicates resume training from epoch 9 file 2.
   
 * Training script inventory
