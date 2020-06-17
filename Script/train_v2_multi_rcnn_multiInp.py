@@ -86,7 +86,7 @@ def train(model, task, y_list, x_list, checkpoint_dir, checkpoint_prefix, device
 	# Load model if not train from scratch
 	loss_fn = nn.CrossEntropyLoss()
 	optimizer = torch.optim.Adam(model.parameters(), lr=lr, amsgrad=True)
-	scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.6, patience=0, threshold=1e-5, threshold_mode='abs')
+	scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=0, threshold=1e-5, threshold_mode='abs')
 
 	if resume_surfix is not None:
 		model_artifact_path = os.path.join(checkpoint_dir, '{}_{}.pth'.format(checkpoint_prefix, resume_surfix))
@@ -132,8 +132,6 @@ def train(model, task, y_list, x_list, checkpoint_dir, checkpoint_prefix, device
 					train_running_loss += loss.item()
 					train_n_batch += 1
 
-					scheduler.step()
-
 				except StopIteration:
 					break
 
@@ -145,7 +143,7 @@ def train(model, task, y_list, x_list, checkpoint_dir, checkpoint_prefix, device
 			_ = gc.collect()
 
 			if logger:
-				logger.info('Epoch {}/{} - File {}/8 Done - Train Loss: {:.6f}, Learning Rate {:.7f}'.format(epoch, task[-1][0], start, train_running_loss/train_n_batch, optimizer.param_groups[0]['lr']))
+				logger.info('Epoch {}/{} - File {}/8 Done - Train Loss: {:.6f}, Learning Rate {:.7f}'.format(epoch, task[-1][0], index, train_running_loss/train_n_batch, optimizer.param_groups[0]['lr']))
 
 			# Save model & optimizer state dict
 			ck_file_name = '{}_{}_{}.pth'.format(checkpoint_prefix, epoch, split_idx)
@@ -231,10 +229,10 @@ if __name__=='__main__':
 	if not os.path.isdir(checkpoint_dir): os.mkdir(checkpoint_dir)
 	checkpoint_prefix = task_name
 	logger = initiate_logger(os.path.join(checkpoint_dir, '{}.log'.format(task_name)))
-	logger.info('Batch Size: {}, Max Sequence Length: {}, Learning Rate: {}'.format(batch_size, max_seq_len, 'Dynamic'))
+	logger.info('Batch Size: {}, Max Sequence Length: {}, Learning Rate: {}'.format(batch_size, max_seq_len, lr))
 
 	y_list = ['age', 'gender']
-	x_list = ['product'] # ['creative', 'ad', 'product', 'advertiser']
+	x_list = ['creative', 'ad', 'product', 'advertiser']
 
 	DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 	logger.info('Device in Use: {}'.format(DEVICE))
@@ -245,7 +243,7 @@ if __name__=='__main__':
 		a = torch.cuda.memory_allocated(DEVICE)/1024**3
 		logger.info('CUDA Memory: Total {:.2f} GB, Cached {:.2f} GB, Allocated {:.2f} GB'.format(t,c,a))
 
-	model = Multi_Seq_RCNN_Classifier(10, [128], [128], conv_channel=3, max_seq_len=max_seq_len)
+	model = Multi_Seq_RCNN_Classifier(20, [128, 128, 128, 128], [128, 128, 128, 128], conv_channel=192, max_seq_len=max_seq_len)
 
 	logger.info('Model Parameter #: {}'.format(get_torch_module_num_of_parameter(model)))
 

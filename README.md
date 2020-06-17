@@ -58,6 +58,7 @@ python3 train_v2_age_final_pre_ln_tf_multiInp.py 40 2048 100 1e-3
     |--clf_tf_enc.py           # Model based on Encoder part of Transformer
     |--clf_esim.py             # Model based on ESIM (Enhanced Sequential Inference Model)
     |--clf_pre_ln_tf.py        # Model based on pre Layer Normalization Transformer
+    |--clf_rcnn.py             # Model based on RCNN
     |--clf_final.py            # Model for final submission
   ```
 

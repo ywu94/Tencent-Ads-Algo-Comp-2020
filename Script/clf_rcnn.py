@@ -127,7 +127,6 @@ class Multi_Seq_RCNN_Classifier(nn.Module):
 			reshaped = self.kmax_pooling(getattr(self, 'cnn_extraction_{}'.format(index))(out)).view(batch_size, -1)
 			buf.append(reshaped)
 		out = torch.cat(buf, dim=1)
-		print(out.shape)
 		out = self.mlp_output(out)
 		return out
 
