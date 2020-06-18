@@ -27,7 +27,7 @@ python3 train_w2v.py advertiser 128
 python3 train_w2v.py product 128
 python3 train_w2v.py industry 64
 python3 train_w2v.py product_category 64
-python3 train_v2_age_final_pre_ln_tf_multiInp.py 40 2048 100 1e-3
+python3 train_v2_age_final_resgru_multiInp.py 40 1024 100 1e-3
 ```
 
 <a id='script_documentation'></a>
@@ -60,6 +60,10 @@ python3 train_v2_age_final_pre_ln_tf_multiInp.py 40 2048 100 1e-3
     |--clf_pre_ln_tf.py        # Model based on pre Layer Normalization Transformer
     |--clf_rcnn.py             # Model based on RCNN
     |--clf_final.py            # Model for final submission
+    |
+    |--train_v2_age_final_resgru_multiInp.py
+    |--train_v2_age_final_resgru_cnn_multiInp.py
+    |--train_v2_age_final_preln_tf_multiInp.py
   ```
 
 <a id='model_training1'></a>
@@ -183,13 +187,5 @@ You should have the following files after exection.
 
 Note that `w2v_registry.json` stores all the w2v model artifact paths and `wv_registry.json` stores all the `KeyedVector` artifact paths.
 
-<a id='material'></a>
-## Materials
-
-* 官方竞赛手册: [PDF](https://algo-1256087447.cos.ap-nanjing.myqcloud.com/admin/20200509/7da104bd074309285ab56a6e52150ba3.pdf)
-
-* 赛题理解与思路: [思路byCHIZHU](https://mp.weixin.qq.com/s/ISQjOGcc_spSNVeeg75d8w), [分析by鱼遇](https://zhuanlan.zhihu.com/p/141288029), [思路by鱼遇](https://zhuanlan.zhihu.com/p/143185271)
-
-* 往届回顾: [17~19](https://zhuanlan.zhihu.com/p/116907937)
 
 
