@@ -54,13 +54,13 @@ def get_torch_module_num_of_parameter(model):
 	params = sum([np.prod(p.size()) for p in model_parameters])
 	return params
 
-def get_transformer_scheduler(optimizer, d_model, n_warmup, last_step=-1):
+def get_transformer_scheduler(optimizer, max_lr, n_warmup, last_step=-1):
 	"""
 	Learning rate scheduler as described in "Attention is what you need".
 	"""
 	def lr_lambda(current_step):
 		current_step += 1
-		return max(d_model**-0.5 * min(current_step**-0.5, current_step*n_warmup**-1.5), 1e-5)
+		return max(max_lr/(n_warmup**-0.5) * min(current_step**-0.5, current_step*n_warmup**-1.5), 1e-5)
 	return torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda, last_epoch=last_step)
 
 def train(model, task, y_list, x_list, checkpoint_dir, checkpoint_prefix, device, batch_size=512, max_seq_len=100, lr=1e-3, resume_surfix=None, logger=None):
@@ -105,7 +105,7 @@ def train(model, task, y_list, x_list, checkpoint_dir, checkpoint_prefix, device
 		last_step = (ep-1)*batch_per_epoch+fi*batch_per_file-1
 		if logger: logger.info('Learning rate resumed from step {}'.format(last_step+1))
 
-	scheduler = get_transformer_scheduler(optimizer, 512, 1000, last_step=last_step)
+	scheduler = get_transformer_scheduler(optimizer, lr, 3*batch_per_epoch, last_step=last_step)
 	model.to(device)
 	
 	# Initiate word vector host
@@ -256,4 +256,5 @@ if __name__=='__main__':
 
 	train(model, task, y_list, x_list, checkpoint_dir, checkpoint_prefix, DEVICE, 
 		batch_size=batch_size, max_seq_len=max_seq_len, lr=lr, resume_surfix=resume_surfix, logger=logger)
+
 	
